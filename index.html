@@ -249,12 +249,19 @@ let _usersCache = [];
 let _docsCache  = [];
 
 // === USUÁRIOS (REMOTE) ===
-async function users(){
+// === USUÁRIOS (REMOTE) ===
+let _usersCache = []; // cache em memória
+
+async function fetchUsers() {
   const res = await fetch('/api/users');
   _usersCache = await res.json();
   return _usersCache;
 }
-async function createUserRemote({ nome, email, senha, role }){
+function users() {           // getter síncrono
+  return _usersCache;
+}
+
+async function createUserRemote({ nome, email, senha, role }) {
   const res = await fetch('/api/users', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -262,9 +269,10 @@ async function createUserRemote({ nome, email, senha, role }){
   });
   if (!res.ok) throw new Error((await res.json()).error || 'Erro ao criar usuário');
   const u = await res.json();
-  _usersCache.push(u);
+  _usersCache.push(u);       // mantém cache
   return u;
 }
+
 async function toggleUserActive(email){
   const u = _usersCache.find(x => x.email.toLowerCase() === email.toLowerCase());
   const patch = { ativo: !(u?.ativo !== false) };
@@ -280,12 +288,20 @@ async function toggleUserActive(email){
   return updated;
 }
 
+
 // === DOCUMENTOS (REMOTE) ===
-async function docs(){
+// === DOCUMENTOS (REMOTE) ===
+let _docsCache = []; // cache em memória
+
+async function fetchDocs(){
   const res = await fetch('/api/docs');
   _docsCache = await res.json();
   return _docsCache;
 }
+function docs(){             // getter síncrono
+  return _docsCache;
+}
+
 async function addDocRemote(entry){
   const res = await fetch('/api/docs', {
     method: 'POST',
@@ -294,7 +310,7 @@ async function addDocRemote(entry){
   });
   if (!res.ok) throw new Error((await res.json()).error || 'Erro ao salvar documento');
   const saved = await res.json();
-  _docsCache.unshift(saved);
+  _docsCache.unshift(saved); // mantém cache
   return saved;
 }
 async function patchDocRemote(proto, patch){
@@ -310,6 +326,10 @@ async function patchDocRemote(proto, patch){
   return saved;
 }
 
+// (se existir sua função setDocs antiga, simplifique-a para manter o cache)
+function setDocs(d){ _docsCache = d; }
+
+
 function newProtocol(){ return `ASER-${new Date().getFullYear()}-${Math.floor(Math.random()*1e6).toString().padStart(6,'0')}`; }
 
 function statusBadge(s){
@@ -321,12 +341,13 @@ function statusBadge(s){
 function show(el, on=true){ document.getElementById(el).classList.toggle('hidden', !on); }
 
 async function boot(){
-  const list = await users(); // busca no KV
-  const hasUsers = (list.length > 0);
+  await fetchUsers();                 // carrega da nuvem
+  const hasUsers = users().length > 0;
   show('setupAdminView', !hasUsers);
   show('loginView', hasUsers);
   show('appView', false);
 }
+
 boot();
 
 /* ======= SETUP ADMIN ======= */
@@ -336,15 +357,20 @@ document.getElementById('btnCriarAdmin').addEventListener('click', async ()=>{
   const senha= document.getElementById('saSenha').value.trim();
   if(!nome||!email||!senha){ alert('Preencha todos os campos.'); return; }
 
-  try{
-    const list = await users();
-    if(list.some(x=>x.email.toLowerCase()===email.toLowerCase())){ alert('Já existe usuário com este e-mail.'); return; }
-    await createUserRemote({ nome, email, senha, role:'adm' });
-    alert('ADMIN criado com sucesso! Faça login.');
-    show('setupAdminView', false);
-    show('loginView', true);
-  }catch(e){ alert(e.message); }
+  await fetchUsers();                 // garante lista atual
+  const list = users();
+  if(list.some(x=>x.email.toLowerCase()===email.toLowerCase())){
+    alert('Já existe usuário com este e-mail.');
+    return;
+  }
+
+  await createUserRemote({ nome, email, senha, role:'adm' });
+
+  alert('ADMIN criado com sucesso! Faça login.');
+  show('setupAdminView', false);
+  show('loginView', true);
 });
+
 
 /* ======= LOGIN ======= */
 async function setView(user){
@@ -369,7 +395,9 @@ async function setView(user){
   else showTab('#tab-adm');
 
   // 🔑 carrega os documentos da nuvem (KV) antes de desenhar as tabelas
-  await docs();
+
+await fetchDocs();
+
 
   renderTables();
   renderUsersTable();
@@ -383,19 +411,15 @@ document.getElementById('btnLogin').addEventListener('click', async ()=>{
 
   if(!email||!pass){ alert('Preencha e-mail e senha'); return; }
 
-  const list = await users();
+  await fetchUsers();
+  const list = users();
   const u = list.find(x=>x.email.toLowerCase()===email.toLowerCase() && x.senha===pass && x.ativo!==false);
-
   if(!u){ alert('Login ou senha incorretos!'); return; }
-
-  if(u.role !== selectedRole){
-    alert('Perfil incompatível com seus dados!');
-    return;
-  }
+  if(u.role !== selectedRole){ alert('Perfil incompatível com seus dados!'); return; }
 
   const user = { email:u.email, role:u.role, nome:u.nome };
   sessionStorage.setItem('mvp_user', JSON.stringify(user));
-  await setView(user);
+  setView(user);
 });
 
 document.getElementById('btnLogout').addEventListener('click', ()=>{
