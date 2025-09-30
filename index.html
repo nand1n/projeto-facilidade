@@ -1,153 +1,639 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Projeto Facilidade • Login + Upload</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>MVP Protótipo (Local) — Login + Admin Users</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
-    :root { --b:#0a84ff; --g:#10b981; --t:#111827; --m:#6b7280; }
-    *{box-sizing:border-box} body{font-family:Arial,Helvetica,sans-serif;margin:0;background:#f7fafc;color:#111}
-    .wrap{max-width:900px;margin:32px auto;padding:0 16px}
-    .card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;box-shadow:0 4px 18px rgba(0,0,0,.06);padding:18px 18px 20px}
-    h1{margin:0 0 8px;font-size:22px} h2{margin:0 0 12px;font-size:18px;color:#111}
-    label{display:block;margin:10px 0 6px;color:#111} input[type=text],input[type=password]{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:10px}
-    button{padding:10px 14px;border:0;border-radius:10px;background:var(--b);color:#fff;cursor:pointer} button:disabled{opacity:.6;cursor:not-allowed}
-    .row{display:flex;gap:12px;flex-wrap:wrap} .row>div{flex:1 1 260px}
-    .muted{color:#6b7280;font-size:12px}
-    .ok{color:var(--g)} .err{color:#dc2626}
+    body{background:#f7f9fc}
     .hidden{display:none}
-    .pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef2ff;color:#3730a3;font-size:12px}
-    .list{margin:10px 0 0;padding-left:18px}
-    .sep{height:1px;background:#e5e7eb;margin:14px 0}
+    button, .btn, .form-control, .form-select { min-height: 44px; }
+    .nav-tabs .nav-link { padding: .75rem 1rem; }
+    .thumb { width:31vw; height:31vw; max-width:140px; max-height:140px; object-fit:cover; border-radius:6px; border:2px solid #e5e7eb }
+    .ok { border-color:#16a34a }
+    .bad { border-color:#dc2626 }
+    @media (max-width: 576px){ #repActionBar { display:block; } #repButtonsInline { display:none; } }
+    @media (min-width: 577px){ #repActionBar { display:none; } #repButtonsInline { display:flex; gap:.5rem; } }
   </style>
 </head>
-<body>
-  <div class="wrap">
-    <!-- LOGIN -->
-    <div id="loginCard" class="card">
-      <h1>Entrar</h1>
-      <p class="muted">Seu template original permanece. Ajuste apenas a validação abaixo.</p>
-      <div class="row">
-        <div>
-          <label>Usuário</label>
-          <input id="user" type="text" autocomplete="username" />
+<body class="container py-4">
+
+  <!-- SETUP ADMIN (primeiro acesso) -->
+  <div id="setupAdminView" class="row justify-content-center hidden">
+    <div class="col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h3 class="h5 mb-3">Configuração inicial — Criar ADMIN</h3>
+          <div class="mb-2">
+            <label class="form-label">Nome</label>
+            <input id="saNome" class="form-control" placeholder="Seu nome completo">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">E-mail (login)</label>
+            <input id="saEmail" type="email" class="form-control" placeholder="admin@empresa.com">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Senha</label>
+            <input id="saSenha" type="password" class="form-control" placeholder="••••••••">
+          </div>
+          <div class="alert alert-warning">
+            Este ADMIN ficará salvo apenas neste navegador (uso de testes locais).
+          </div>
+          <div class="d-grid">
+            <button id="btnCriarAdmin" class="btn btn-primary">Criar ADMIN</button>
+          </div>
         </div>
-        <div>
-          <label>Senha</label>
-          <input id="pass" type="password" autocomplete="current-password" />
-        </div>
       </div>
-      <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
-        <button id="btnLogin">Entrar</button>
-        <span id="loginMsg" class="muted"></span>
-      </div>
-    </div>
-
-    <div class="sep"></div>
-
-    <!-- ÁREA APÓS LOGIN -->
-    <div id="appCard" class="card hidden">
-      <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
-        <h2>Bem-vindo! <span class="pill">Sessão ativa</span></h2>
-        <button id="btnSair" style="background:#374151">Sair</button>
-      </div>
-
-      <p class="muted">Aqui fica o restante do seu sistema. Abaixo está o módulo de <strong>upload</strong> (mundo real) que usa <em>/api/upload</em>.</p>
-
-      <!-- MÓDULO DE UPLOAD (mostra só após login) -->
-      <div class="sep"></div>
-      <h2>Enviar fotos/documentos</h2>
-      <p class="muted">No celular, este botão abre a câmera (ou a galeria). Você pode selecionar várias fotos.</p>
-
-      <input id="fileInput" type="file" accept="image/*" capture="environment" multiple />
-      <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
-        <button id="btnEnviar">Enviar</button>
-        <span id="upStatus" class="muted"></span>
-      </div>
-      <ul id="upList" class="list"></ul>
     </div>
   </div>
 
-  <script>
-    // ====== PERSISTÊNCIA SIMPLES DE SESSÃO (localStorage) ======
-    const LS_KEY = "facilidade.auth";
-    const $ = (id)=>document.getElementById(id);
+  <!-- LOGIN -->
+  <div id="loginView" class="row justify-content-center hidden">
+    <div class="col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h3 class="h5 mb-3">MVP Portal — Acesso</h3>
+          <div class="mb-2">
+            <label class="form-label">E-mail</label>
+            <input id="email" class="form-control" placeholder="seu@empresa.com">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Senha</label>
+            <input id="password" type="password" class="form-control" placeholder="••••••">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Perfil</label>
+            <select id="role" class="form-select">
+              <option value="rep">Representante</option>
+              <option value="instr">Instrumentador</option>
+              <option value="log">Logística</option>
+              <option value="ana">Analista</option>
+              <option value="adm">Admin</option>
+            </select>
+          </div>
+          <div class="d-grid gap-2">
+            <button id="btnLogin" class="btn btn-primary">Entrar</button>
+            <button id="btnClear" class="btn btn-outline-secondary">Limpar dados locais</button>
+          </div>
+          <small class="text-muted d-block mt-2">Protótipo local (dados no navegador).</small>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    function showApp() {
-      $("loginCard").classList.add("hidden");
-      $("appCard").classList.remove("hidden");
+  <!-- APP -->
+  <div id="appView" class="hidden">
+    <nav class="navbar navbar-expand-lg bg-white border rounded px-3 mb-3">
+      <a class="navbar-brand" href="#">MVP Portal - Teste</a>
+      <div class="ms-auto">
+        <span id="userBadge" class="badge text-bg-secondary me-2"></span>
+        <button id="btnLogout" class="btn btn-outline-danger btn-sm">Sair</button>
+      </div>
+    </nav>
+
+    <!-- ABAS -->
+    <ul class="nav nav-tabs mb-3" id="tabs">
+      <li class="nav-item repTab"><button class="nav-link" data-target="#tab-rep">Representante</button></li>
+      <li class="nav-item logTab"><button class="nav-link" data-target="#tab-log">Logística</button></li>
+      <li class="nav-item anaTab"><button class="nav-link" data-target="#tab-ana">Analista</button></li>
+      <li class="nav-item admTab"><button class="nav-link" data-target="#tab-adm">Gerenciar Usuários (ADMIN)</button></li>
+    </ul>
+
+    <!-- REP -->
+    <div id="tab-rep" class="card shadow-sm p-3 hidden">
+      <h5>Envio rápido (teste)</h5>
+      <div class="row g-2">
+        <div class="col-md-3"><input id="inpPaciente" class="form-control" placeholder="Paciente (iniciais/ID)" autocomplete="off"></div>
+        <div class="col-md-3"><input id="inpMedico" class="form-control" placeholder="Médico" autocomplete="off"></div>
+        <div class="col-md-3"><input id="inpHospital" class="form-control" placeholder="Hospital" autocomplete="off"></div>
+        <div class="col-md-3"><input id="inpConvenio" class="form-control" placeholder="Convênio" autocomplete="off"></div>
+      </div>
+      <div class="mt-3">
+        <input id="fileInput" type="file" accept="image/*" capture="environment" multiple class="form-control">
+        <small class="text-muted">Até 5 imagens. Validação simples antes do PDF.</small>
+      </div>
+      <div id="thumbs" class="mt-3 d-flex gap-2 flex-wrap"></div>
+
+      <div id="repButtonsInline" class="mt-3">
+        <button id="btnGenPdf" class="btn btn-secondary">Gerar PDF</button>
+        <button id="btnEnviar" class="btn btn-success" disabled>Enviar (simulado)</button>
+      </div>
+
+      <div id="repMsg" class="mt-3"></div>
+    </div>
+
+    <div id="repActionBar" class="d-sm-none fixed-bottom bg-white border-top p-2">
+      <div class="container px-0">
+        <div class="d-flex gap-2">
+          <button id="btnGenPdfMobile" class="btn btn-secondary flex-fill">Gerar PDF</button>
+          <button id="btnEnviarMobile" class="btn btn-success flex-fill" disabled>Enviar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOG -->
+    <div id="tab-log" class="card shadow-sm p-3 hidden">
+      <h5>Painel - Logística</h5>
+      <div class="mb-2 d-flex gap-2">
+        <input id="fPaciente" class="form-control" placeholder="Filtrar por paciente">
+        <input id="fMedico" class="form-control" placeholder="Médico">
+        <input id="fProto" class="form-control" placeholder="Protocolo">
+        <select id="fStatus" class="form-select">
+          <option value="TODOS">Todos</option>
+          <option value="Recebido">Em andamento</option>
+          <option value="Finalizado">Finalizados</option>
+          <option value="Resolvido">Resolvidos</option>
+        </select>
+        <button id="btnFilter" class="btn btn-outline-primary">Filtrar</button>
+      </div>
+      <div class="table-responsive" style="max-height:320px;">
+        <table class="table table-sm align-middle">
+          <thead><tr><th>Protoc.</th><th>Paciente</th><th>Médico</th><th>Hospital</th><th>Convênio</th><th>Status</th><th>Ações</th></tr></thead>
+          <tbody id="logTable"></tbody>
+        </table>
+      </div>
+      <small class="text-muted">Finalizar → libera para Analista.</small>
+    </div>
+
+    <!-- ANA -->
+    <div id="tab-ana" class="card shadow-sm p-3 hidden">
+      <h5>Painel - Analista</h5>
+      <div class="mb-2 d-flex gap-2">
+        <input id="aPaciente" class="form-control" placeholder="Filtrar por paciente">
+        <input id="aMedico" class="form-control" placeholder="Médico">
+        <input id="aProto" class="form-control" placeholder="Protocolo">
+        <select id="aStatus" class="form-select">
+          <option value="TODOS">Todos</option>
+          <option value="Finalizado" selected>Finalizados</option>
+          <option value="Resolvido">Resolvidos</option>
+          <option value="Recebido">Em andamento</option>
+        </select>
+        <button id="btnFilterAna" class="btn btn-outline-primary">Filtrar</button>
+      </div>
+      <div class="table-responsive" style="max-height:320px;">
+        <table class="table table-sm align-middle">
+          <thead><tr><th>Protoc.</th><th>Paciente</th><th>Médico</th><th>Hospital</th><th>Convênio</th><th>Status</th><th>Ações</th></tr></thead>
+          <tbody id="anaTable"></tbody>
+        </table>
+      </div>
+      <small class="text-muted">Marcar Resolvido quando concluído.</small>
+    </div>
+
+    <div id="tab-adm" class="card shadow-sm p-3 hidden">
+      <h5>Gerenciar Usuários (Local)</h5>
+      <div class="row g-2">
+        <div class="col-md-4"><input id="uNome" class="form-control" placeholder="Nome completo"></div>
+        <div class="col-md-3"><input id="uEmail" type="email" class="form-control" placeholder="email@empresa.com"></div>
+        <div class="col-md-3"><input id="uSenha" type="password" class="form-control" placeholder="Senha"></div>
+        <div class="col-md-2">
+          <select id="uRole" class="form-select">
+            <option value="rep">Representante</option>
+            <option value="instr">Instrumentador</option>
+            <option value="log">Logística</option>
+            <option value="ana">Analista</option>
+            <option value="adm">Admin</option>
+          </select>
+        </div>
+      </div>
+      <div class="mt-2 d-flex gap-2">
+        <button id="btnCriarUsuario" class="btn btn-primary">Criar Usuário</button>
+        <button id="btnExportar" class="btn btn-outline-secondary">Exportar (JSON)</button>
+        <label class="btn btn-outline-secondary mb-0">
+          Importar (JSON) <input id="inpImportar" type="file" accept="application/json" hidden>
+        </label>
+      </div>
+      <hr>
+      <div class="table-responsive" style="max-height:320px;">
+        <table class="table table-sm align-middle">
+          <thead><tr><th>Nome</th><th>E-mail</th><th>Função</th><th>Status</th><th>Ações</th></tr></thead>
+          <tbody id="usersTable"></tbody>
+        </table>
+      </div>
+      <small class="text-muted">Dados ficam no navegador (localStorage). Para testar, é perfeito.</small>
+    </div>
+
+    <div id="downloadArea" class="mt-3"></div>
+  </div>
+
+<script>
+/* ======= STORAGE KEYS ======= */
+const STORAGE_USERS = 'mvp_users_v1';
+const STORAGE_DOCS  = 'mvp_docs_v1';
+window._pdfStore = window._pdfStore || {}; // protocolo -> blobURL (apenas sessão)
+
+/* ======= UTILS ======= */
+function saveJSON(key, obj){ localStorage.setItem(key, JSON.stringify(obj)); }
+function loadJSON(key){ try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; } }
+function users(){ return loadJSON(STORAGE_USERS); }
+function setUsers(u){ saveJSON(STORAGE_USERS, u); }
+function docs(){ return loadJSON(STORAGE_DOCS); }
+function setDocs(d){ saveJSON(STORAGE_DOCS, d); }
+function newProtocol(){ return `ASER-${new Date().getFullYear()}-${Math.floor(Math.random()*1e6).toString().padStart(6,'0')}`; }
+
+function statusBadge(s){
+  const cls = s==='Resolvido' ? 'text-bg-success' : s==='Finalizado' ? 'text-bg-primary' : 'text-bg-secondary';
+  return `<span class="badge ${cls}">${s}</span>`;
+}
+
+/* ======= VIEW CONTROL ======= */
+function show(el, on=true){ document.getElementById(el).classList.toggle('hidden', !on); }
+
+function boot(){
+  const hasUsers = (users().length > 0);
+  show('setupAdminView', !hasUsers);
+  show('loginView', hasUsers);
+  show('appView', false);
+}
+boot();
+
+/* ======= SETUP ADMIN ======= */
+document.getElementById('btnCriarAdmin').addEventListener('click', ()=>{
+  const nome = document.getElementById('saNome').value.trim();
+  const email= document.getElementById('saEmail').value.trim();
+  const senha= document.getElementById('saSenha').value.trim();
+  if(!nome||!email||!senha){ alert('Preencha todos os campos.'); return; }
+
+  const u = users();
+  if(u.some(x=>x.email.toLowerCase()===email.toLowerCase())){ alert('Já existe usuário com este e-mail.'); return; }
+  u.push({ nome, email, senha, role:'adm', ativo:true, created_at:new Date().toISOString() });
+  setUsers(u);
+
+  alert('ADMIN criado com sucesso! Faça login.');
+  show('setupAdminView', false);
+  show('loginView', true);
+});
+
+/* ======= LOGIN ======= */
+function setView(user){
+  show('loginView', false); show('setupAdminView', false); show('appView', true);
+  const roleLabel = user.role==='rep' ? 'REP'
+                   : user.role==='instr' ? 'INSTR'
+                   : user.role==='log' ? 'LOG'
+                   : user.role==='ana' ? 'ANA' : 'ADMIN';
+  document.getElementById('userBadge').textContent = `${user.nome} • ${roleLabel}`;
+
+  document.querySelectorAll('.repTab').forEach(el=>el.classList.toggle('hidden', !(user.role==='rep'||user.role==='instr')));
+  document.querySelectorAll('.logTab').forEach(el=>el.classList.toggle('hidden', user.role!=='log'));
+  document.querySelectorAll('.anaTab').forEach(el=>el.classList.toggle('hidden', user.role!=='ana'));
+  document.querySelectorAll('.admTab').forEach(el=>el.classList.toggle('hidden', user.role!=='adm'));
+
+  if(user.role==='rep'||user.role==='instr') showTab('#tab-rep');
+  else if(user.role==='log') showTab('#tab-log');
+  else if(user.role==='ana') showTab('#tab-ana');
+  else showTab('#tab-adm');
+
+  renderTables();
+  renderUsersTable();
+}
+
+document.getElementById('btnLogin').addEventListener('click', ()=>{
+  const email = document.getElementById('email').value.trim();
+  const pass  = document.getElementById('password').value.trim();
+  const selectedRole = document.getElementById('role').value;
+
+  if(!email||!pass){ alert('Preencha e-mail e senha'); return; }
+
+  const u = users().find(x=>x.email.toLowerCase()===email.toLowerCase() && x.senha===pass && x.ativo!==false);
+  if(!u){ alert('Login ou senha incorretos!'); return; }
+
+  if(u.role !== selectedRole){
+    alert('Perfil incompatível com seus dados!');
+    return;
+  }
+
+  const user = { email:u.email, role:u.role, nome:u.nome };
+  sessionStorage.setItem('mvp_user', JSON.stringify(user));
+  setView(user);
+});
+
+document.getElementById('btnLogout').addEventListener('click', ()=>{
+  sessionStorage.removeItem('mvp_user');
+  show('appView', false); show('loginView', true);
+});
+
+document.getElementById('btnClear').addEventListener('click', ()=>{
+  if(!confirm('Isso apaga TODOS os dados locais (usuários, documentos). Continuar?')) return;
+  localStorage.removeItem(STORAGE_USERS);
+  localStorage.removeItem(STORAGE_DOCS);
+  window._pdfStore = {};
+  sessionStorage.removeItem('mvp_user');
+  location.reload();
+});
+
+/* ======= TABS ======= */
+function showTab(sel){
+  document.querySelectorAll('[id^="tab-"]').forEach(div=>div.classList.add('hidden'));
+  document.querySelector(sel).classList.remove('hidden');
+  document.querySelectorAll('#tabs .nav-link').forEach(b=>b.classList.remove('active'));
+  document.querySelector(`#tabs .nav-link[data-target="${sel}"]`)?.classList.add('active');
+}
+document.querySelectorAll('#tabs .nav-link').forEach(btn=>btn.addEventListener('click', ()=> showTab(btn.dataset.target)));
+
+/* ======= REP — imagens/PDF ======= */
+function toCanvas(img, maxSide=1600){
+  const cvs=document.createElement('canvas'); let{width,height}=img;
+  const scale=Math.min(1, maxSide/Math.max(width,height)); width=Math.round(width*scale); height=Math.round(height*scale);
+  cvs.width=width;cvs.height=height; cvs.getContext('2d').drawImage(img,0,0,width,height); return cvs;
+}
+function grayscaleData(ctx,w,h){ const d=ctx.getImageData(0,0,w,h).data, g=new Float32Array(w*h); for(let i=0,j=0;i<d.length;i+=4,j++) g[j]=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2]; return {gray:g,w,h}; }
+function laplacianVariance(gray,w,h){ if(w<3||h<3)return 0; let s=0, ss=0, c=0; const idx=(x,y)=>y*w+x;
+  for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){ const L=(gray[idx(x-1,y)]+gray[idx(x+1,y)]+gray[idx(x,y-1)]+gray[idx(x,y+1)]-4*gray[idx(x,y)]); s+=L; ss+=L*L; c++; }
+  const m=s/c; return ss/c - m*m;
+}
+function luminanceStd(gray){ let s=0,ss=0,n=gray.length; for(let i=0;i<n;i++){ const v=gray[i]; s+=v; ss+=v*v; } const m=s/n; return Math.sqrt(ss/n - m*m); }
+function fileToImage(file){ return new Promise((res,rej)=>{ const url=URL.createObjectURL(file); const img=new Image(); img.onload=()=>{ URL.revokeObjectURL(url); res(img); }; img.onerror=rej; img.src=url; }); }
+
+let selectedFiles=[];
+document.getElementById('fileInput').addEventListener('change', async (e)=>{
+  const files=[...e.target.files].slice(0,5); selectedFiles=[]; const thumbs=document.getElementById('thumbs'); thumbs.innerHTML='';
+  for(const f of files){
+    const img=await fileToImage(f); const cvs=toCanvas(img,1600); const ctx=cvs.getContext('2d');
+    const {gray,w,h}=grayscaleData(ctx,cvs.width,cvs.height); const blurVar=laplacianVariance(gray,w,h); const lumStd=luminanceStd(gray);
+    const ok=blurVar>=100 && lumStd>=18; const dataUrl=cvs.toDataURL('image/jpeg',0.75);
+    selectedFiles.push({file:f,dataUrl,ok,reason:ok?'OK':(blurVar<100?'Borrada':'Baixa luz')});
+    const imgEl=document.createElement('img'); imgEl.src=dataUrl; imgEl.className='thumb '+(ok?'ok':'bad'); imgEl.title=selectedFiles[selectedFiles.length-1].reason; thumbs.appendChild(imgEl);
+  }
+  document.getElementById('btnEnviar').disabled=true; document.getElementById('btnEnviarMobile').disabled=true;
+});
+
+async function generatePdf(){
+  if(selectedFiles.length===0){ alert('Selecione 1 a 5 imagens'); return false; }
+  const { jsPDF }=window.jspdf; const pdf=new jsPDF({orientation:'p',unit:'pt',format:'a4'}); const pageW=pdf.internal.pageSize.getWidth(); const pageH=pdf.internal.pageSize.getHeight();
+  for(let i=0;i<selectedFiles.length;i++){
+    if(i>0) pdf.addPage(); const img=new Image(); await new Promise(r=>{ img.onload=r; img.src=selectedFiles[i].dataUrl; });
+    const margin=36; const maxW=pageW-margin*2, maxH=pageH-margin*2; let w=img.width,h=img.height; const scale=Math.min(maxW/w,maxH/h); w*=scale; h*=scale;
+    pdf.addImage(selectedFiles[i].dataUrl,'JPEG',(pageW-w)/2,(pageH-h)/2,w,h);
+  }
+  const blob=pdf.output('blob'); const url=URL.createObjectURL(blob); window._lastPdfBlob=blob; window._lastPdfUrl=url;
+  document.getElementById('repMsg').innerHTML=`<div class="alert alert-info">PDF gerado (${selectedFiles.length} páginas). <a href="${url}" target="_blank" class="btn btn-sm btn-outline-secondary ms-2">Abrir</a> <a href="${url}" download="dossie.pdf" class="btn btn-sm btn-outline-primary ms-1">Baixar</a></div>`;
+  document.getElementById('btnEnviar').disabled=false; document.getElementById('btnEnviarMobile').disabled=false; return true;
+}
+document.getElementById('btnGenPdf').addEventListener('click', generatePdf);
+document.getElementById('btnGenPdfMobile').addEventListener('click', ()=>document.getElementById('btnGenPdf').click());
+
+/* ======= (A) ENVIO DO PDF PARA O BLOB (ONLINE) ======= */
+async function uploadPdfToBlob(proto, blob){
+  const buffer = await blob.arrayBuffer();
+  const filename = `${proto}.pdf`;
+  const res = await fetch('/api/upload', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/pdf',
+      'x-filename': encodeURIComponent(filename)
+    },
+    body: buffer
+  });
+  if(!res.ok) throw new Error(await res.text());
+  const data = await res.json(); // { url }
+  return data.url;
+}
+
+/* ======= (B) doSend — registra + sobe PDF + fallback local ======= */
+function doSend(){
+  if(!window._lastPdfBlob){ alert('Gere o PDF primeiro'); return; }
+  const paciente=document.getElementById('inpPaciente').value.trim()||'ID-S/ NOME';
+  const medico=document.getElementById('inpMedico').value.trim()||'—';
+  const hospital=document.getElementById('inpHospital').value.trim()||'—';
+  const convenio=document.getElementById('inpConvenio').value.trim()||'—';
+
+  const proto=newProtocol();
+  const d=docs();
+
+  let publicUrl = null;
+  (async () => {
+    try {
+      publicUrl = await uploadPdfToBlob(proto, window._lastPdfBlob);
+    } catch (e) {
+      console.error('Falha no upload do PDF para o Blob:', e);
+      // segue com o PDF local na sessão
     }
-    function showLogin() {
-      $("appCard").classList.add("hidden");
-      $("loginCard").classList.remove("hidden");
+
+    const entry={proto,paciente,medico,hospital,convenio,status:'Recebido',createdAt:new Date().toISOString(), url: publicUrl || null};
+    d.unshift(entry); setDocs(d);
+
+    const blobUrl=URL.createObjectURL(window._lastPdfBlob);
+    window._pdfStore[proto]=blobUrl;
+
+    selectedFiles=[]; document.getElementById('thumbs').innerHTML=''; document.getElementById('fileInput').value='';
+    document.getElementById('btnEnviar').disabled=true; document.getElementById('btnEnviarMobile').disabled=true;
+    document.getElementById('repMsg').innerHTML=`<div class="alert alert-success">Enviado! Protocolo: <strong>${proto}</strong></div>`;
+    document.getElementById('inpPaciente').value=''; document.getElementById('inpMedico').value=''; document.getElementById('inpHospital').value=''; document.getElementById('inpConvenio').value='';
+    renderTables();
+  })();
+}
+document.getElementById('btnEnviar').addEventListener('click', doSend);
+document.getElementById('btnEnviarMobile').addEventListener('click', ()=>document.getElementById('btnEnviar').click());
+
+/* ======= TABELAS + FILTROS ======= */
+function renderTables(){
+  const d=docs();
+
+  // Logística
+  const logTbody=document.getElementById('logTable'); logTbody.innerHTML='';
+  d.filter(x=>x.status!=='Resolvido').forEach(x=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${x.proto}</td><td>${x.paciente}</td><td>${x.medico}</td><td>${x.hospital}</td><td>${x.convenio}</td><td>${statusBadge(x.status)}</td><td></td>`;
+    const td=tr.querySelector('td:last-child');
+
+    const btnView=document.createElement('button'); 
+    btnView.className='btn btn-sm btn-outline-secondary me-1'; 
+    btnView.textContent='Ver PDF';
+
+    // (C) LINK ONLINE (se existir)
+    if (x.url) {
+      const aOnline = document.createElement('a');
+      aOnline.href = x.url;
+      aOnline.target = '_blank';
+      aOnline.className = 'btn btn-sm btn-outline-success me-1';
+      aOnline.textContent = 'Ver PDF (online)';
+      td.appendChild(aOnline);
     }
 
-    // Restaura sessão
-    (function init(){
-      try {
-        const ok = JSON.parse(localStorage.getItem(LS_KEY) || "false");
-        ok ? showApp() : showLogin();
-      } catch { showLogin(); }
-    })();
+    // DOWNLOAD local com fallback online
+    btnView.onclick=()=>{ 
+      let url = window._pdfStore[x.proto]; 
+      if(!url && x.url){ window.open(x.url, '_blank'); return; }
+      if(!url){ alert('PDF não encontrado nesta sessão. Use "Ver PDF (online)".'); return; }
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${x.paciente}_${x.proto}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    };
+    td.appendChild(btnView);
 
-    // ====== LOGIN (AQUI VOCÊ PODE TROCAR A REGRA) ======
-    $("btnLogin").onclick = () => {
-      const u = $("user").value.trim();
-      const p = $("pass").value.trim();
+    if(x.status==='Recebido'){
+      const btnFin=document.createElement('button'); 
+      btnFin.className='btn btn-sm btn-success'; 
+      btnFin.textContent='Finalizar'; 
+      btnFin.onclick=()=>{ x.status='Finalizado'; setDocs(d); renderTables(); }; 
+      td.appendChild(btnFin);
+    }
+    logTbody.appendChild(tr);
+  });
 
-      // 🔒 TROQUE ESTA REGRA PELO SEU VALIDADOR REAL, SE TIVER.
-      // Para teste: aceita qualquer coisa não vazia
-      if (u && p) {
-        localStorage.setItem(LS_KEY, "true");
-        $("loginMsg").textContent = "";
-        showApp();
-      } else {
-        $("loginMsg").textContent = "Preencha usuário e senha.";
-        $("loginMsg").className = "muted err";
-      }
+  // Analista
+  const anaTbody=document.getElementById('anaTable'); anaTbody.innerHTML='';
+  d.filter(x=>x.status==='Finalizado').forEach(x=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${x.proto}</td><td>${x.paciente}</td><td>${x.medico}</td><td>${x.hospital}</td><td>${x.convenio}</td><td>${statusBadge(x.status)}</td><td></td>`;
+    const td=tr.querySelector('td:last-child');
+
+    const btnView=document.createElement('button'); 
+    btnView.className='btn btn-sm btn-outline-secondary me-1'; 
+    btnView.textContent='Ver PDF';
+
+    // (D) LINK ONLINE (se existir)
+    if (x.url) {
+      const aOnline = document.createElement('a');
+      aOnline.href = x.url;
+      aOnline.target = '_blank';
+      aOnline.className = 'btn btn-sm btn-outline-success me-1';
+      aOnline.textContent = 'Ver PDF (online)';
+      td.appendChild(aOnline);
+    }
+
+    // DOWNLOAD local com fallback online
+    btnView.onclick=()=>{ 
+      let url = window._pdfStore[x.proto]; 
+      if(!url && x.url){ window.open(x.url, '_blank'); return; }
+      if(!url){ alert('PDF não encontrado nesta sessão. Use "Ver PDF (online)".'); return; }
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${x.paciente}_${x.proto}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     };
 
-    $("btnSair").onclick = () => {
-      localStorage.removeItem(LS_KEY);
-      showLogin();
+    const btnRes=document.createElement('button'); 
+    btnRes.className='btn btn-sm btn-primary'; 
+    btnRes.textContent='Resolvido';
+    btnRes.onclick=()=>{ x.status='Resolvido'; setDocs(d); renderTables(); };
+
+    td.appendChild(btnView); 
+    td.appendChild(btnRes);
+    anaTbody.appendChild(tr);
+  });
+}
+
+document.getElementById('btnFilter').addEventListener('click', ()=> applyFilter());
+document.getElementById('btnFilterAna').addEventListener('click', ()=> applyFilter(true));
+function applyFilter(analista=false){
+  const d=docs();
+  const p=(analista?document.getElementById('aPaciente').value:document.getElementById('fPaciente').value).trim().toLowerCase();
+  const m=(analista?document.getElementById('aMedico').value:document.getElementById('fMedico').value).trim().toLowerCase();
+  const pr=(analista?document.getElementById('aProto').value:document.getElementById('fProto').value).trim().toLowerCase();
+  const stSel=(analista?document.getElementById('aStatus').value:document.getElementById('fStatus').value);
+  const tbody=document.getElementById(analista?'anaTable':'logTable'); tbody.innerHTML='';
+
+  let list=d.filter(x=>{
+    if(p && !x.paciente.toLowerCase().includes(p)) return false;
+    if(m && !x.medico.toLowerCase().includes(m)) return false;
+    if(pr && !x.proto.toLowerCase().includes(pr)) return false;
+    if(stSel && stSel!=='TODOS' && x.status!==stSel) return false;
+    return true;
+  });
+  if(stSel==='TODOS'){
+    list=list.filter(x=> analista ? x.status!=='Recebido' : true);
+  }
+
+  list.forEach(x=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${x.proto}</td><td>${x.paciente}</td><td>${x.medico}</td><td>${x.hospital}</td><td>${x.convenio}</td><td>${statusBadge(x.status)}</td><td></td>`;
+    const td=tr.querySelector('td:last-child');
+
+    const btnView=document.createElement('button'); 
+    btnView.className='btn btn-sm btn-outline-secondary me-1'; 
+    btnView.textContent='Ver PDF';
+
+    // LINK ONLINE (se existir)
+    if (x.url) {
+      const aOnline = document.createElement('a');
+      aOnline.href = x.url;
+      aOnline.target = '_blank';
+      aOnline.className = 'btn btn-sm btn-outline-success me-1';
+      aOnline.textContent = 'Ver PDF (online)';
+      td.appendChild(aOnline);
+    }
+
+    // DOWNLOAD local com fallback online
+    btnView.onclick=()=>{ 
+      let url = window._pdfStore[x.proto]; 
+      if(!url && x.url){ window.open(x.url, '_blank'); return; }
+      if(!url){ alert('PDF não encontrado nesta sessão. Use "Ver PDF (online)".'); return; }
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${x.paciente}_${x.proto}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     };
 
-    // ====== UPLOAD REAL PARA /api/upload (Vercel Blob) ======
-    $("btnEnviar").onclick = async () => {
-      const input = $("fileInput");
-      const files = Array.from(input.files || []);
-      const status = $("upStatus");
-      const list = $("upList");
+    td.appendChild(btnView);
 
-      if (!files.length) { alert("Escolha pelo menos um arquivo."); return; }
+    if(x.status==='Recebido' && !analista){
+      const btnFin=document.createElement('button'); btnFin.className='btn btn-sm btn-success'; btnFin.textContent='Finalizar';
+      btnFin.onclick=()=>{ x.status='Finalizado'; setDocs(d); renderTables(); };
+      td.appendChild(btnFin);
+    } else if(x.status==='Finalizado' && analista){
+      const btnRes=document.createElement('button'); btnRes.className='btn btn-sm btn-primary'; btnRes.textContent='Resolvido';
+      btnRes.onclick=()=>{ x.status='Resolvido'; setDocs(d); renderTables(); };
+      td.appendChild(btnRes);
+    }
+    tbody.appendChild(tr);
+  });
+}
 
-      status.textContent = "Enviando...";
-      list.innerHTML = "";
+/* ======= ADMIN — Gerenciar usuários (localStorage) ======= */
+function renderUsersTable(){
+  const tb=document.getElementById('usersTable'); if(!tb) return; tb.innerHTML='';
+  users().forEach(u=>{
+    const tr=document.createElement('tr');
+    const roleLabel = u.role==='rep'?'REP':u.role==='instr'?'INSTR':u.role==='log'?'LOG':u.role==='ana'?'ANA':'ADMIN';
+    tr.innerHTML=`<td>${u.nome}</td><td>${u.email}</td><td>${roleLabel}</td><td>${u.ativo!==false?'Ativo':'Inativo'}</td><td></td>`;
+    const td=tr.querySelector('td:last-child');
+    const btnToggle=document.createElement('button'); btnToggle.className='btn btn-sm ' + (u.ativo!==false?'btn-outline-warning':'btn-outline-success');
+    btnToggle.textContent = u.ativo!==false ? 'Inativar' : 'Ativar';
+    btnToggle.onclick=()=>{ const arr=users(); const idx=arr.findIndex(x=>x.email===u.email); if(idx>=0){ arr[idx].ativo = !(arr[idx].ativo!==false); setUsers(arr); renderUsersTable(); } };
+    td.appendChild(btnToggle);
+    tb.appendChild(tr);
+  });
+}
 
-      try {
-        for (const f of files) {
-          const res = await fetch("/api/upload", {
-            method: "POST",
-            headers: {
-              "content-type": f.type || "application/octet-stream",
-              "x-filename": encodeURIComponent(f.name)
-            },
-            body: await f.arrayBuffer()
-          });
+document.getElementById('btnCriarUsuario').addEventListener('click', ()=>{
+  const nome=document.getElementById('uNome').value.trim();
+  const email=document.getElementById('uEmail').value.trim();
+  const senha=document.getElementById('uSenha').value.trim();
+  const role=document.getElementById('uRole').value;
+  if(!nome||!email||!senha){ alert('Preencha nome, e-mail e senha.'); return; }
+  const arr=users();
+  if(arr.some(x=>x.email.toLowerCase()===email.toLowerCase())){ alert('Já existe usuário com este e-mail.'); return; }
+  arr.push({ nome, email, senha, role, ativo:true, created_at:new Date().toISOString() });
+  setUsers(arr);
+  document.getElementById('uNome').value=''; document.getElementById('uEmail').value=''; document.getElementById('uSenha').value='';
+  renderUsersTable();
+  alert('Usuário criado!');
+});
 
-          if (!res.ok) throw new Error(await res.text());
-          const data = await res.json();
+document.getElementById('btnExportar').addEventListener('click', ()=>{
+  const blob=new Blob([JSON.stringify(users(),null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='usuarios.json'; a.click(); URL.revokeObjectURL(url);
+});
+document.getElementById('inpImportar').addEventListener('change', async (e)=>{
+  const file=e.target.files[0]; if(!file) return;
+  const text=await file.text(); let arr=[];
+  try{ arr=JSON.parse(text); if(!Array.isArray(arr)) throw new Error('JSON inválido'); }catch(err){ alert('Arquivo inválido'); return; }
+  setUsers(arr); renderUsersTable(); alert('Importado com sucesso!');
+});
 
-          const li = document.createElement("li");
-          li.innerHTML = `✔️ ${f.name}: <a href="${data.url}" target="_blank">${data.url}</a>`;
-          list.appendChild(li);
-        }
-        status.textContent = "Tudo enviado com sucesso!";
-        input.value = "";
-      } catch (e) {
-        status.textContent = "Erro: " + e.message;
-      }
-    };
-  </script>
+/* ======= RESTORE SESSION ======= */
+const curr = JSON.parse(sessionStorage.getItem('mvp_user') || 'null');
+if(curr){ setView(curr); } else { boot(); }
+</script>
 </body>
 </html>
