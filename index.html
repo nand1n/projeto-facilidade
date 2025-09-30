@@ -244,10 +244,72 @@ window._pdfStore = window._pdfStore || {}; // protocolo -> blobURL (apenas sess�
 /* ======= UTILS ======= */
 function saveJSON(key, obj){ localStorage.setItem(key, JSON.stringify(obj)); }
 function loadJSON(key){ try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; } }
-function users(){ return loadJSON(STORAGE_USERS); }
-function setUsers(u){ saveJSON(STORAGE_USERS, u); }
-function docs(){ return loadJSON(STORAGE_DOCS); }
-function setDocs(d){ saveJSON(STORAGE_DOCS, d); }
+// Cache local em memória (para renderização)
+let _usersCache = [];
+let _docsCache  = [];
+
+// === USUÁRIOS (REMOTE) ===
+async function users(){
+  const res = await fetch('/api/users');
+  _usersCache = await res.json();
+  return _usersCache;
+}
+async function createUserRemote({ nome, email, senha, role }){
+  const res = await fetch('/api/users', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ nome, email, senha, role, ativo: true })
+  });
+  if (!res.ok) throw new Error((await res.json()).error || 'Erro ao criar usuário');
+  const u = await res.json();
+  _usersCache.push(u);
+  return u;
+}
+async function toggleUserActive(email){
+  const u = _usersCache.find(x => x.email.toLowerCase() === email.toLowerCase());
+  const patch = { ativo: !(u?.ativo !== false) };
+  const res = await fetch('/api/users', {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email, patch })
+  });
+  if (!res.ok) throw new Error((await res.json()).error || 'Erro ao atualizar usuário');
+  const updated = await res.json();
+  const i = _usersCache.findIndex(x => x.email.toLowerCase() === email.toLowerCase());
+  if (i >= 0) _usersCache[i] = updated;
+  return updated;
+}
+
+// === DOCUMENTOS (REMOTE) ===
+async function docs(){
+  const res = await fetch('/api/docs');
+  _docsCache = await res.json();
+  return _docsCache;
+}
+async function addDocRemote(entry){
+  const res = await fetch('/api/docs', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(entry)
+  });
+  if (!res.ok) throw new Error((await res.json()).error || 'Erro ao salvar documento');
+  const saved = await res.json();
+  _docsCache.unshift(saved);
+  return saved;
+}
+async function patchDocRemote(proto, patch){
+  const res = await fetch('/api/docs', {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ proto, patch })
+  });
+  if (!res.ok) throw new Error((await res.json()).error || 'Erro ao atualizar documento');
+  const saved = await res.json();
+  const i = _docsCache.findIndex(x => x.proto === proto);
+  if (i >= 0) _docsCache[i] = saved;
+  return saved;
+}
+
 function newProtocol(){ return `ASER-${new Date().getFullYear()}-${Math.floor(Math.random()*1e6).toString().padStart(6,'0')}`; }
 
 function statusBadge(s){
@@ -258,8 +320,9 @@ function statusBadge(s){
 /* ======= VIEW CONTROL ======= */
 function show(el, on=true){ document.getElementById(el).classList.toggle('hidden', !on); }
 
-function boot(){
-  const hasUsers = (users().length > 0);
+async function boot(){
+  const list = await users(); // busca no KV
+  const hasUsers = (list.length > 0);
   show('setupAdminView', !hasUsers);
   show('loginView', hasUsers);
   show('appView', false);
@@ -267,25 +330,28 @@ function boot(){
 boot();
 
 /* ======= SETUP ADMIN ======= */
-document.getElementById('btnCriarAdmin').addEventListener('click', ()=>{
+document.getElementById('btnCriarAdmin').addEventListener('click', async ()=>{
   const nome = document.getElementById('saNome').value.trim();
   const email= document.getElementById('saEmail').value.trim();
   const senha= document.getElementById('saSenha').value.trim();
   if(!nome||!email||!senha){ alert('Preencha todos os campos.'); return; }
 
-  const u = users();
-  if(u.some(x=>x.email.toLowerCase()===email.toLowerCase())){ alert('Já existe usuário com este e-mail.'); return; }
-  u.push({ nome, email, senha, role:'adm', ativo:true, created_at:new Date().toISOString() });
-  setUsers(u);
-
-  alert('ADMIN criado com sucesso! Faça login.');
-  show('setupAdminView', false);
-  show('loginView', true);
+  try{
+    const list = await users();
+    if(list.some(x=>x.email.toLowerCase()===email.toLowerCase())){ alert('Já existe usuário com este e-mail.'); return; }
+    await createUserRemote({ nome, email, senha, role:'adm' });
+    alert('ADMIN criado com sucesso! Faça login.');
+    show('setupAdminView', false);
+    show('loginView', true);
+  }catch(e){ alert(e.message); }
 });
 
 /* ======= LOGIN ======= */
-function setView(user){
-  show('loginView', false); show('setupAdminView', false); show('appView', true);
+async function setView(user){
+  show('loginView', false);
+  show('setupAdminView', false);
+  show('appView', true);
+
   const roleLabel = user.role==='rep' ? 'REP'
                    : user.role==='instr' ? 'INSTR'
                    : user.role==='log' ? 'LOG'
@@ -302,19 +368,24 @@ function setView(user){
   else if(user.role==='ana') showTab('#tab-ana');
   else showTab('#tab-adm');
 
+  // 🔑 carrega os documentos da nuvem (KV) antes de desenhar as tabelas
+  await docs();
+
   renderTables();
   renderUsersTable();
-  updateActionBarVisibility(); // <-- garante estado correto no mobile
+  updateActionBarVisibility();
 }
 
-document.getElementById('btnLogin').addEventListener('click', ()=>{
+document.getElementById('btnLogin').addEventListener('click', async ()=>{
   const email = document.getElementById('email').value.trim();
   const pass  = document.getElementById('password').value.trim();
   const selectedRole = document.getElementById('role').value;
 
   if(!email||!pass){ alert('Preencha e-mail e senha'); return; }
 
-  const u = users().find(x=>x.email.toLowerCase()===email.toLowerCase() && x.senha===pass && x.ativo!==false);
+  const list = await users();
+  const u = list.find(x=>x.email.toLowerCase()===email.toLowerCase() && x.senha===pass && x.ativo!==false);
+
   if(!u){ alert('Login ou senha incorretos!'); return; }
 
   if(u.role !== selectedRole){
@@ -324,7 +395,7 @@ document.getElementById('btnLogin').addEventListener('click', ()=>{
 
   const user = { email:u.email, role:u.role, nome:u.nome };
   sessionStorage.setItem('mvp_user', JSON.stringify(user));
-  setView(user);
+  await setView(user);
 });
 
 document.getElementById('btnLogout').addEventListener('click', ()=>{
@@ -485,7 +556,6 @@ function doSend(){
   const convenio=document.getElementById('inpConvenio').value.trim()||'—';
 
   const proto=newProtocol();
-  const d=docs();
 
   // nome de arquivo seguro: paciente + protocolo
   const safe = (s)=> s.replace(/[^a-z0-9-_]+/gi,'_').slice(0,50);
@@ -505,8 +575,13 @@ function doSend(){
       // segue com o PDF local na sessão
     }
 
-    const entry={proto,paciente,medico,hospital,convenio,status:'Recebido',createdAt:new Date().toISOString(), url: publicUrl || null};
-    d.unshift(entry); setDocs(d);
+    const entry = {
+      proto, paciente, medico, hospital, convenio,
+      status: 'Recebido',
+      createdAt: new Date().toISOString(),
+      url: publicUrl || null
+    };
+    await addDocRemote(entry);
 
     const blobUrl=URL.createObjectURL(window._lastPdfBlob);
     window._pdfStore[proto]=blobUrl;
@@ -514,7 +589,7 @@ function doSend(){
     selectedFiles=[]; document.getElementById('thumbs').innerHTML=''; 
     document.getElementById('repMsg').innerHTML=`<div class="alert alert-success">Enviado! Protocolo: <strong>${proto}</strong></div>`;
     document.getElementById('inpPaciente').value=''; document.getElementById('inpMedico').value=''; document.getElementById('inpHospital').value=''; document.getElementById('inpConvenio').value='';
-    renderTables();
+    await docs(); renderTables();
   })();
 }
 document.getElementById('btnEnviar').addEventListener('click', doSend);
@@ -522,7 +597,7 @@ document.getElementById('btnEnviarMobile').addEventListener('click', ()=>documen
 
 /* ======= TABELAS + FILTROS ======= */
 function renderTables(){
-  const d=docs();
+  const d=_docsCache;
 
   // Logística
   const logTbody=document.getElementById('logTable'); logTbody.innerHTML='';
@@ -563,7 +638,7 @@ function renderTables(){
       const btnFin=document.createElement('button'); 
       btnFin.className='btn btn-sm btn-success'; 
       btnFin.textContent='Finalizar'; 
-      btnFin.onclick=()=>{ x.status='Finalizado'; setDocs(d); renderTables(); }; 
+      btnFin.onclick=async ()=>{ await patchDocRemote(x.proto,{status:'Finalizado'}); await docs(); renderTables(); }; 
       td.appendChild(btnFin);
     }
     logTbody.appendChild(tr);
@@ -604,7 +679,7 @@ function renderTables(){
     const btnRes=document.createElement('button'); 
     btnRes.className='btn btn-sm btn-primary'; 
     btnRes.textContent='Resolvido';
-    btnRes.onclick=()=>{ x.status='Resolvido'; setDocs(d); renderTables(); };
+    btnRes.onclick=async ()=>{ await patchDocRemote(x.proto,{status:'Resolvido'}); await docs(); renderTables(); };
 
     td.appendChild(btnView); 
     td.appendChild(btnRes);
@@ -614,8 +689,9 @@ function renderTables(){
 
 document.getElementById('btnFilter').addEventListener('click', ()=> applyFilter());
 document.getElementById('btnFilterAna').addEventListener('click', ()=> applyFilter(true));
-function applyFilter(analista=false){
-  const d=docs();
+async function applyFilter(analista=false){
+  await docs();
+  const d=_docsCache;
   const p=(analista?document.getElementById('aPaciente').value:document.getElementById('fPaciente').value).trim().toLowerCase();
   const m=(analista?document.getElementById('aMedico').value:document.getElementById('fMedico').value).trim().toLowerCase();
   const pr=(analista?document.getElementById('aProto').value:document.getElementById('fProto').value).trim().toLowerCase();
@@ -667,58 +743,71 @@ function applyFilter(analista=false){
 
     if(x.status==='Recebido' && !analista){
       const btnFin=document.createElement('button'); btnFin.className='btn btn-sm btn-success'; btnFin.textContent='Finalizar';
-      btnFin.onclick=()=>{ x.status='Finalizado'; setDocs(d); renderTables(); };
+      btnFin.onclick=async ()=>{ await patchDocRemote(x.proto,{status:'Finalizado'}); await docs(); renderTables(); };
       td.appendChild(btnFin);
     } else if(x.status==='Finalizado' && analista){
       const btnRes=document.createElement('button'); btnRes.className='btn btn-sm btn-primary'; btnRes.textContent='Resolvido';
-      btnRes.onclick=()=>{ x.status='Resolvido'; setDocs(d); renderTables(); };
+      btnRes.onclick=async ()=>{ await patchDocRemote(x.proto,{status:'Resolvido'}); await docs(); renderTables(); };
       td.appendChild(btnRes);
     }
     tbody.appendChild(tr);
   });
 }
 
-/* ======= ADMIN — Gerenciar usuários (localStorage) ======= */
-function renderUsersTable(){
+/* ======= ADMIN — Gerenciar usuários ======= */
+async function renderUsersTable(){
   const tb=document.getElementById('usersTable'); if(!tb) return; tb.innerHTML='';
-  users().forEach(u=>{
+  await users();
+  _usersCache.forEach(u=>{
     const tr=document.createElement('tr');
     const roleLabel = u.role==='rep'?'REP':u.role==='instr'?'INSTR':u.role==='log'?'LOG':u.role==='ana'?'ANA':'ADMIN';
     tr.innerHTML=`<td>${u.nome}</td><td>${u.email}</td><td>${roleLabel}</td><td>${u.ativo!==false?'Ativo':'Inativo'}</td><td></td>`;
     const td=tr.querySelector('td:last-child');
     const btnToggle=document.createElement('button'); btnToggle.className='btn btn-sm ' + (u.ativo!==false?'btn-outline-warning':'btn-outline-success');
     btnToggle.textContent = u.ativo!==false ? 'Inativar' : 'Ativar';
-    btnToggle.onclick=()=>{ const arr=users(); const idx=arr.findIndex(x=>x.email===u.email); if(idx>=0){ arr[idx].ativo = !(arr[idx].ativo!==false); setUsers(arr); renderUsersTable(); } };
+    btnToggle.onclick=async ()=>{
+      await toggleUserActive(u.email);
+      renderUsersTable();
+    };
     td.appendChild(btnToggle);
     tb.appendChild(tr);
   });
 }
 
-document.getElementById('btnCriarUsuario').addEventListener('click', ()=>{
+document.getElementById('btnCriarUsuario').addEventListener('click', async ()=>{
   const nome=document.getElementById('uNome').value.trim();
   const email=document.getElementById('uEmail').value.trim();
   const senha=document.getElementById('uSenha').value.trim();
   const role=document.getElementById('uRole').value;
   if(!nome||!email||!senha){ alert('Preencha nome, e-mail e senha.'); return; }
-  const arr=users();
-  if(arr.some(x=>x.email.toLowerCase()===email.toLowerCase())){ alert('Já existe usuário com este e-mail.'); return; }
-  arr.push({ nome, email, senha, role, ativo:true, created_at:new Date().toISOString() });
-  setUsers(arr);
-  document.getElementById('uNome').value=''; document.getElementById('uEmail').value=''; document.getElementById('uSenha').value='';
-  renderUsersTable();
-  alert('Usuário criado!');
+  try{
+    const list = await users();
+    if(list.some(x=>x.email.toLowerCase()===email.toLowerCase())){ alert('Já existe usuário com este e-mail.'); return; }
+    await createUserRemote({ nome, email, senha, role });
+    document.getElementById('uNome').value=''; document.getElementById('uEmail').value=''; document.getElementById('uSenha').value='';
+    renderUsersTable();
+    alert('Usuário criado!');
+  }catch(e){ alert(e.message); }
 });
 
-document.getElementById('btnExportar').addEventListener('click', ()=>{
-  const blob=new Blob([JSON.stringify(users(),null,2)],{type:'application/json'});
+document.getElementById('btnExportar').addEventListener('click', async ()=>{
+  await users();
+  const blob=new Blob([JSON.stringify(_usersCache,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a'); a.href=url; a.download='usuarios.json'; a.click(); URL.revokeObjectURL(url);
 });
 document.getElementById('inpImportar').addEventListener('change', async (e)=>{
   const file=e.target.files[0]; if(!file) return;
   const text=await file.text(); let arr=[];
-  try{ arr=JSON.parse(text); if(!Array.isArray(arr)) throw new Error('JSON inválido'); }catch(err){ alert('Arquivo inválido'); return; }
-  setUsers(arr); renderUsersTable(); alert('Importado com sucesso!');
+  try{
+    arr=JSON.parse(text); if(!Array.isArray(arr)) throw new Error('JSON inválido');
+  }catch(err){ alert('Arquivo inválido'); return; }
+  try{
+    for(const u of arr){
+      try{ await createUserRemote(u); }catch(_){} // ignora duplicados
+    }
+    renderUsersTable(); alert('Importado com sucesso!');
+  }catch(err){ alert('Falha ao importar'); }
 });
 
 /* ======= RESTORE SESSION ======= */
