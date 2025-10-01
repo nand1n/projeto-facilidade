@@ -236,6 +236,17 @@
   </div>
 
 <script>
+
+window.addEventListener('unhandledrejection', (ev)=>{
+  console.error('Unhandled promise rejection:', ev.reason);
+  // garante que ao menos alguma tela apareça
+  if (document.getElementById('loginView').classList.contains('hidden') &&
+      document.getElementById('setupAdminView').classList.contains('hidden') &&
+      document.getElementById('appView').classList.contains('hidden')) {
+    show('loginView', true); // mostra login para não ficar branco
+  }
+});
+
 /* ======= STORAGE KEYS ======= */
 const STORAGE_USERS = 'mvp_users_v1';
 const STORAGE_DOCS  = 'mvp_docs_v1';
@@ -253,8 +264,16 @@ let _docsCache  = [];
 let _usersCache = []; // cache em memória
 
 async function fetchUsers() {
-  const res = await fetch('/api/users');
-  _usersCache = await res.json();
+  try {
+    const res = await fetch('/api/users', { headers: { 'accept': 'application/json' } });
+    if (!res.ok) { console.error('users API status', res.status); _usersCache = []; return _usersCache; }
+    // protege caso volte HTML/erro
+    const text = await res.text();
+    try { _usersCache = JSON.parse(text); } catch { console.error('users JSON inválido:', text.slice(0,120)); _usersCache = []; }
+  } catch (e) {
+    console.error('users fetch falhou:', e);
+    _usersCache = [];
+  }
   return _usersCache;
 }
 function users() {           // getter síncrono
@@ -341,15 +360,25 @@ function statusBadge(s){
 function show(el, on=true){ document.getElementById(el).classList.toggle('hidden', !on); }
 
 async function boot(){
-  await fetchUsers();                 // carrega da nuvem
-  const hasUsers = users().length > 0;
-  show('setupAdminView', !hasUsers);
-  show('loginView', hasUsers);
-  show('appView', false);
+  try{
+    const list = await users().catch(()=>[]);
+    const hasUsers = Array.isArray(list) && list.length > 0;
+    show('setupAdminView', !hasUsers);
+    show('loginView', hasUsers);
+    show('appView', false);
+  }catch(e){
+    console.error('Falha no boot:', e);
+    // Fallback seguro: mostra setup para não ficar tela branca
+    show('setupAdminView', true);
+    show('loginView', false);
+    show('appView', false);
+  }
 }
+
 
 boot();
 
+/* ======= SETUP ADMIN ======= */
 /* ======= SETUP ADMIN ======= */
 document.getElementById('btnCriarAdmin').addEventListener('click', async ()=>{
   const nome = document.getElementById('saNome').value.trim();
@@ -357,9 +386,8 @@ document.getElementById('btnCriarAdmin').addEventListener('click', async ()=>{
   const senha= document.getElementById('saSenha').value.trim();
   if(!nome||!email||!senha){ alert('Preencha todos os campos.'); return; }
 
-  await fetchUsers();                 // garante lista atual
-  const list = users();
-  if(list.some(x=>x.email.toLowerCase()===email.toLowerCase())){
+  const list = await users(); // busca na KV
+  if(Array.isArray(list) && list.some(x=>x.email.toLowerCase()===email.toLowerCase())){
     alert('Já existe usuário com este e-mail.');
     return;
   }
@@ -370,6 +398,7 @@ document.getElementById('btnCriarAdmin').addEventListener('click', async ()=>{
   show('setupAdminView', false);
   show('loginView', true);
 });
+
 
 
 /* ======= LOGIN ======= */
@@ -411,9 +440,11 @@ document.getElementById('btnLogin').addEventListener('click', async ()=>{
 
   if(!email||!pass){ alert('Preencha e-mail e senha'); return; }
 
-  await fetchUsers();
-  const list = users();
-  const u = list.find(x=>x.email.toLowerCase()===email.toLowerCase() && x.senha===pass && x.ativo!==false);
+  const list = await users(); // <- agora sim
+  const u = Array.isArray(list) ? list.find(x =>
+    x.email.toLowerCase()===email.toLowerCase() && x.senha===pass && x.ativo!==false
+  ) : null;
+
   if(!u){ alert('Login ou senha incorretos!'); return; }
   if(u.role !== selectedRole){ alert('Perfil incompatível com seus dados!'); return; }
 
@@ -421,6 +452,7 @@ document.getElementById('btnLogin').addEventListener('click', async ()=>{
   sessionStorage.setItem('mvp_user', JSON.stringify(user));
   setView(user);
 });
+
 
 document.getElementById('btnLogout').addEventListener('click', ()=>{
   sessionStorage.removeItem('mvp_user');
@@ -837,6 +869,10 @@ document.getElementById('inpImportar').addEventListener('change', async (e)=>{
 /* ======= RESTORE SESSION ======= */
 const curr = JSON.parse(sessionStorage.getItem('mvp_user') || 'null');
 if(curr){ setView(curr); } else { boot(); }
+
+window.addEventListener('error', e => console.error('JS Error:', e.message, e)); // debug
+window.addEventListener('unhandledrejection', e => console.error('Promise Rejection:', e.reason)); // debug
+
 </script>
 </body>
 </html>
