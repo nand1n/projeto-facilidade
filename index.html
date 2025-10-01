@@ -362,7 +362,7 @@ function show(el, on=true){ document.getElementById(el).classList.toggle('hidden
 
 async function boot(){
   try{
-    const list = await users().catch(()=>[]);
+    const list = await fetchUsers().catch(()=>[]);
     const hasUsers = Array.isArray(list) && list.length > 0;
     show('setupAdminView', !hasUsers);
     show('loginView', hasUsers);
