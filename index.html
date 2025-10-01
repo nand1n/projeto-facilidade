@@ -1,255 +1,244 @@
 <!doctype html>
 <html lang="pt-br">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>MVP Protótipo (Local) — Login + Admin Users</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <style>
-    body{background:#f7f9fc}
-    .hidden{display:none}
-    button, .btn, .form-control, .form-select { min-height: 44px; }
-    .nav-tabs .nav-link { padding: .75rem 1rem; }
-    .thumb { width:31vw; height:31vw; max-width:140px; max-height:140px; object-fit:cover; border-radius:6px; border:2px solid #e5e7eb }
-    .ok { border-color:#16a34a }
-    .bad { border-color:#dc2626 }
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>MVP Protótipo (Local) — Login + Admin Users</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body{background:#f7f9fc}
+    .hidden{display:none}
+    button, .btn, .form-control, .form-select { min-height: 44px; }
+    .nav-tabs .nav-link { padding: .75rem 1rem; }
+    .thumb { width:31vw; height:31vw; max-width:140px; max-height:140px; object-fit:cover; border-radius:6px; border:2px solid #e5e7eb }
+    .ok { border-color:#16a34a }
+    .bad { border-color:#dc2626 }
 
-    /* Barra fixa do mobile: por padrão, vamos esconder via JS quando não for rep/instr na aba certa */
-    @media (max-width: 576px){ #repActionBar { display:block; } #repButtonsInline { display:none; } }
-    @media (min-width: 577px){ #repActionBar { display:none; } #repButtonsInline { display:flex; gap:.5rem; } }
+    /* Barra fixa do mobile: por padrão, vamos esconder via JS quando não for rep/instr na aba certa */
+    @media (max-width: 576px){ #repActionBar { display:block; } #repButtonsInline { display:none; } }
+    @media (min-width: 577px){ #repActionBar { display:none; } #repButtonsInline { display:flex; gap:.5rem; } }
 
-    /* Barra de upload (progresso opcional) */
-    #upBarWrap{height:8px;background:#eee;border-radius:8px;overflow:hidden;margin-top:8px;display:none}
-    #upBar{height:100%;width:0%;}
-  </style>
+    /* Barra de upload (progresso opcional) */
+    #upBarWrap{height:8px;background:#eee;border-radius:8px;overflow:hidden;margin-top:8px;display:none}
+    #upBar{height:100%;width:0%;}
+  </style>
 </head>
 <body class="container py-4">
 
-  <!-- SETUP ADMIN (primeiro acesso) -->
-  <div id="setupAdminView" class="row justify-content-center hidden">
-    <div class="col-lg-6">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <h3 class="h5 mb-3">Configuração inicial — Criar ADMIN</h3>
-          <div class="mb-2">
-            <label class="form-label">Nome</label>
-            <input id="saNome" class="form-control" placeholder="Seu nome completo">
-          </div>
-          <div class="mb-2">
-            <label class="form-label">E-mail (login)</label>
-            <input id="saEmail" type="email" class="form-control" placeholder="admin@empresa.com">
-          </div>
-          <div class="mb-2">
-            <label class="form-label">Senha</label>
-            <input id="saSenha" type="password" class="form-control" placeholder="••••••••">
-          </div>
-          <div class="alert alert-warning">
-            Este ADMIN ficará salvo apenas neste navegador (uso de testes locais).
-          </div>
-          <div class="d-grid">
-            <button id="btnCriarAdmin" class="btn btn-primary">Criar ADMIN</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+    <div id="setupAdminView" class="row justify-content-center hidden">
+    <div class="col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h3 class="h5 mb-3">Configuração inicial — Criar ADMIN</h3>
+          <div class="mb-2">
+            <label class="form-label">Nome</label>
+            <input id="saNome" class="form-control" placeholder="Seu nome completo">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">E-mail (login)</label>
+            <input id="saEmail" type="email" class="form-control" placeholder="admin@empresa.com">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Senha</label>
+            <input id="saSenha" type="password" class="form-control" placeholder="••••••••">
+          </div>
+          <div class="alert alert-warning">
+            Este ADMIN ficará salvo apenas neste navegador (uso de testes locais).
+          </div>
+          <div class="d-grid">
+            <button id="btnCriarAdmin" class="btn btn-primary">Criar ADMIN</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-  <!-- LOGIN -->
-  <div id="loginView" class="row justify-content-center hidden">
-    <div class="col-lg-6">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <h3 class="h5 mb-3">MVP Portal — Acesso</h3>
-          <div class="mb-2">
-            <label class="form-label">E-mail</label>
-            <input id="email" class="form-control" placeholder="seu@empresa.com">
-          </div>
-          <div class="mb-2">
-            <label class="form-label">Senha</label>
-            <input id="password" type="password" class="form-control" placeholder="••••••">
-          </div>
-          <div class="mb-2">
-            <label class="form-label">Perfil</label>
-            <select id="role" class="form-select">
-              <option value="rep">Representante</option>
-              <option value="instr">Instrumentador</option>
-              <option value="log">Logística</option>
-              <option value="ana">Analista</option>
-              <option value="adm">Admin</option>
-            </select>
-          </div>
-          <div class="d-grid gap-2">
-            <button id="btnLogin" class="btn btn-primary">Entrar</button>
-            <button id="btnClear" class="btn btn-outline-secondary">Limpar dados locais</button>
-          </div>
-          <small class="text-muted d-block mt-2">Protótipo local (dados no navegador).</small>
-        </div>
-      </div>
-    </div>
-  </div>
+    <div id="loginView" class="row justify-content-center hidden">
+    <div class="col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h3 class="h5 mb-3">MVP Portal — Acesso</h3>
+          <div class="mb-2">
+            <label class="form-label">E-mail</label>
+            <input id="email" class="form-control" placeholder="seu@empresa.com">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Senha</label>
+            <input id="password" type="password" class="form-control" placeholder="••••••">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Perfil</label>
+            <select id="role" class="form-select">
+              <option value="rep">Representante</option>
+              <option value="instr">Instrumentador</option>
+              <option value="log">Logística</option>
+              <option value="ana">Analista</option>
+              <option value="adm">Admin</option>
+            </select>
+          </div>
+          <div class="d-grid gap-2">
+            <button id="btnLogin" class="btn btn-primary">Entrar</button>
+            <button id="btnClear" class="btn btn-outline-secondary">Limpar dados locais</button>
+          </div>
+          <small class="text-muted d-block mt-2">Protótipo local (dados no navegador).</small>
+        </div>
+      </div>
+    </div>
+  </div>
 
-  <!-- APP -->
-  <div id="appView" class="hidden">
-    <nav class="navbar navbar-expand-lg bg-white border rounded px-3 mb-3">
-      <a class="navbar-brand" href="#">MVP Portal - Teste</a>
-      <div class="ms-auto">
-        <span id="userBadge" class="badge text-bg-secondary me-2"></span>
-        <button id="btnLogout" class="btn btn-outline-danger btn-sm">Sair</button>
-      </div>
-    </nav>
+    <div id="appView" class="hidden">
+    <nav class="navbar navbar-expand-lg bg-white border rounded px-3 mb-3">
+      <a class="navbar-brand" href="#">MVP Portal - Teste</a>
+      <div class="ms-auto">
+        <span id="userBadge" class="badge text-bg-secondary me-2"></span>
+        <button id="btnLogout" class="btn btn-outline-danger btn-sm">Sair</button>
+      </div>
+    </nav>
 
-    <!-- ABAS -->
-    <ul class="nav nav-tabs mb-3" id="tabs">
-      <li class="nav-item repTab"><button class="nav-link" data-target="#tab-rep">Representante</button></li>
-      <li class="nav-item logTab"><button class="nav-link" data-target="#tab-log">Logística</button></li>
-      <li class="nav-item anaTab"><button class="nav-link" data-target="#tab-ana">Analista</button></li>
-      <li class="nav-item admTab"><button class="nav-link" data-target="#tab-adm">Gerenciar Usuários (ADMIN)</button></li>
-    </ul>
+        <ul class="nav nav-tabs mb-3" id="tabs">
+      <li class="nav-item repTab"><button class="nav-link" data-target="#tab-rep">Representante</button></li>
+      <li class="nav-item logTab"><button class="nav-link" data-target="#tab-log">Logística</button></li>
+      <li class="nav-item anaTab"><button class="nav-link" data-target="#tab-ana">Analista</button></li>
+      <li class="nav-item admTab"><button class="nav-link" data-target="#tab-adm">Gerenciar Usuários (ADMIN)</button></li>
+    </ul>
 
-    <!-- REP -->
-    <div id="tab-rep" class="card shadow-sm p-3 hidden">
-      <h5>Envio rápido (teste)</h5>
-      <div class="row g-2">
-        <div class="col-md-3"><input id="inpPaciente" class="form-control" placeholder="Paciente (iniciais/ID)" autocomplete="off"></div>
-        <div class="col-md-3"><input id="inpMedico" class="form-control" placeholder="Médico" autocomplete="off"></div>
-        <div class="col-md-3"><input id="inpHospital" class="form-control" placeholder="Hospital" autocomplete="off"></div>
-        <div class="col-md-3"><input id="inpConvenio" class="form-control" placeholder="Convênio" autocomplete="off"></div>
-      </div>
+        <div id="tab-rep" class="card shadow-sm p-3 hidden">
+      <h5>Envio rápido (teste)</h5>
+      <div class="row g-2">
+        <div class="col-md-3"><input id="inpPaciente" class="form-control" placeholder="Paciente (iniciais/ID)" autocomplete="off"></div>
+        <div class="col-md-3"><input id="inpMedico" class="form-control" placeholder="Médico" autocomplete="off"></div>
+        <div class="col-md-3"><input id="inpHospital" class="form-control" placeholder="Hospital" autocomplete="off"></div>
+        <div class="col-md-3"><input id="inpConvenio" class="form-control" placeholder="Convênio" autocomplete="off"></div>
+      </div>
 
-      <!-- BOTOES: Câmera (pode limitar a 1 no iOS) e Galeria (permite múltiplas) -->
-      <div class="mt-3 d-flex gap-2 flex-wrap">
-        <button id="btnCamera" type="button" class="btn btn-outline-primary">Abrir câmera</button>
-        <button id="btnGaleria" type="button" class="btn btn-outline-secondary">Escolher da galeria</button>
-        <small class="text-muted ms-1 align-self-center">Até 5 imagens. Validação simples antes do PDF.</small>
-      </div>
+            <div class="mt-3 d-flex gap-2 flex-wrap">
+        <button id="btnCamera" type="button" class="btn btn-outline-primary">Abrir câmera</button>
+        <button id="btnGaleria" type="button" class="btn btn-outline-secondary">Escolher da galeria</button>
+        <small class="text-muted ms-1 align-self-center">Até 5 imagens. Validação simples antes do PDF.</small>
+      </div>
 
-      <!-- Inputs escondidos -->
-      <input id="fileCamera" type="file" accept="image/*;capture=camera" capture="environment" class="d-none">
-      <input id="fileGallery" type="file" accept="image/*" multiple class="d-none">
+            <input id="fileCamera" type="file" accept="image/*;capture=camera" capture="environment" class="d-none">
+      <input id="fileGallery" type="file" accept="image/*" multiple class="d-none">
 
-      <div id="thumbs" class="mt-3 d-flex gap-2 flex-wrap"></div>
+      <div id="thumbs" class="mt-3 d-flex gap-2 flex-wrap"></div>
 
-      <div id="repButtonsInline" class="mt-3">
-        <button id="btnGenPdf" class="btn btn-secondary">Gerar PDF</button>
-        <button id="btnEnviar" class="btn btn-success" disabled>Enviar (simulado)</button>
-      </div>
+      <div id="repButtonsInline" class="mt-3">
+        <button id="btnGenPdf" class="btn btn-secondary">Gerar PDF</button>
+        <button id="btnEnviar" class="btn btn-success" disabled>Enviar (simulado)</button>
+      </div>
 
-      <div id="upBarWrap"><div id="upBar"></div></div>
+      <div id="upBarWrap"><div id="upBar"></div></div>
 
-      <div id="repMsg" class="mt-3"></div>
-    </div>
+      <div id="repMsg" class="mt-3"></div>
+    </div>
 
-    <!-- BARRA FIXA (somente rep/instr + aba REP via JS) -->
-    <div id="repActionBar" class="d-sm-none fixed-bottom bg-white border-top p-2">
-      <div class="container px-0">
-        <div class="d-flex gap-2">
-          <button id="btnGenPdfMobile" class="btn btn-secondary flex-fill">Gerar PDF</button>
-          <button id="btnEnviarMobile" class="btn btn-success flex-fill" disabled>Enviar</button>
-        </div>
-      </div>
-    </div>
+        <div id="repActionBar" class="d-sm-none fixed-bottom bg-white border-top p-2">
+      <div class="container px-0">
+        <div class="d-flex gap-2">
+          <button id="btnGenPdfMobile" class="btn btn-secondary flex-fill">Gerar PDF</button>
+          <button id="btnEnviarMobile" class="btn btn-success flex-fill" disabled>Enviar</button>
+        </div>
+      </div>
+    </div>
 
-    <!-- LOG -->
-    <div id="tab-log" class="card shadow-sm p-3 hidden">
-      <h5>Painel - Logística</h5>
-      <div class="mb-2 d-flex gap-2">
-        <input id="fPaciente" class="form-control" placeholder="Filtrar por paciente">
-        <input id="fMedico" class="form-control" placeholder="Médico">
-        <input id="fProto" class="form-control" placeholder="Protocolo">
-        <select id="fStatus" class="form-select">
-          <option value="TODOS">Todos</option>
-          <option value="Recebido">Em andamento</option>
-          <option value="Finalizado">Finalizados</option>
-          <option value="Resolvido">Resolvidos</option>
-        </select>
-        <button id="btnFilter" class="btn btn-outline-primary">Filtrar</button>
-      </div>
-      <div class="table-responsive" style="max-height:320px;">
-        <table class="table table-sm align-middle">
-          <thead><tr><th>Protoc.</th><th>Paciente</th><th>Médico</th><th>Hospital</th><th>Convênio</th><th>Status</th><th>Ações</th></tr></thead>
-          <tbody id="logTable"></tbody>
-        </table>
-      </div>
-      <small class="text-muted">Finalizar → libera para Analista.</small>
-    </div>
+        <div id="tab-log" class="card shadow-sm p-3 hidden">
+      <h5>Painel - Logística</h5>
+      <div class="mb-2 d-flex gap-2">
+        <input id="fPaciente" class="form-control" placeholder="Filtrar por paciente">
+        <input id="fMedico" class="form-control" placeholder="Médico">
+        <input id="fProto" class="form-control" placeholder="Protocolo">
+        <select id="fStatus" class="form-select">
+          <option value="TODOS">Todos</option>
+          <option value="Recebido">Em andamento</option>
+          <option value="Finalizado">Finalizados</option>
+          <option value="Resolvido">Resolvidos</option>
+        </select>
+        <button id="btnFilter" class="btn btn-outline-primary">Filtrar</button>
+      </div>
+      <div class="table-responsive" style="max-height:320px;">
+        <table class="table table-sm align-middle">
+          <thead><tr><th>Protoc.</th><th>Paciente</th><th>Médico</th><th>Hospital</th><th>Convênio</th><th>Status</th><th>Ações</th></tr></thead>
+          <tbody id="logTable"></tbody>
+        </table>
+      </div>
+      <small class="text-muted">Finalizar → libera para Analista.</small>
+    </div>
 
-    <!-- ANA -->
-    <div id="tab-ana" class="card shadow-sm p-3 hidden">
-      <h5>Painel - Analista</h5>
-      <div class="mb-2 d-flex gap-2">
-        <input id="aPaciente" class="form-control" placeholder="Filtrar por paciente">
-        <input id="aMedico" class="form-control" placeholder="Médico">
-        <input id="aProto" class="form-control" placeholder="Protocolo">
-        <select id="aStatus" class="form-select">
-          <option value="TODOS">Todos</option>
-          <option value="Finalizado" selected>Finalizados</option>
-          <option value="Resolvido">Resolvidos</option>
-          <option value="Recebido">Em andamento</option>
-        </select>
-        <button id="btnFilterAna" class="btn btn-outline-primary">Filtrar</button>
-      </div>
-      <div class="table-responsive" style="max-height:320px;">
-        <table class="table table-sm align-middle">
-          <thead><tr><th>Protoc.</th><th>Paciente</th><th>Médico</th><th>Hospital</th><th>Convênio</th><th>Status</th><th>Ações</th></tr></thead>
-          <tbody id="anaTable"></tbody>
-        </table>
-      </div>
-      <small class="text-muted">Marcar Resolvido quando concluído.</small>
-    </div>
+        <div id="tab-ana" class="card shadow-sm p-3 hidden">
+      <h5>Painel - Analista</h5>
+      <div class="mb-2 d-flex gap-2">
+        <input id="aPaciente" class="form-control" placeholder="Filtrar por paciente">
+        <input id="aMedico" class="form-control" placeholder="Médico">
+        <input id="aProto" class="form-control" placeholder="Protocolo">
+        <select id="aStatus" class="form-select">
+          <option value="TODOS">Todos</option>
+          <option value="Finalizado" selected>Finalizados</option>
+          <option value="Resolvido">Resolvidos</option>
+          <option value="Recebido">Em andamento</option>
+        </select>
+        <button id="btnFilterAna" class="btn btn-outline-primary">Filtrar</button>
+      </div>
+      <div class="table-responsive" style="max-height:320px;">
+        <table class="table table-sm align-middle">
+          <thead><tr><th>Protoc.</th><th>Paciente</th><th>Médico</th><th>Hospital</th><th>Convênio</th><th>Status</th><th>Ações</th></tr></thead>
+          <tbody id="anaTable"></tbody>
+        </table>
+      </div>
+      <small class="text-muted">Marcar Resolvido quando concluído.</small>
+    </div>
 
-    <!-- ADM: Gerenciar usuários -->
-    <div id="tab-adm" class="card shadow-sm p-3 hidden">
-      <h5>Gerenciar Usuários (Local)</h5>
-      <div class="row g-2">
-        <div class="col-md-4"><input id="uNome" class="form-control" placeholder="Nome completo"></div>
-        <div class="col-md-3"><input id="uEmail" type="email" class="form-control" placeholder="email@empresa.com"></div>
-        <div class="col-md-3"><input id="uSenha" type="password" class="form-control" placeholder="Senha"></div>
-        <div class="col-md-2">
-          <select id="uRole" class="form-select">
-            <option value="rep">Representante</option>
-            <option value="instr">Instrumentador</option>
-            <option value="log">Logística</option>
-            <option value="ana">Analista</option>
-            <option value="adm">Admin</option>
-          </select>
-        </div>
-      </div>
-      <div class="mt-2 d-flex gap-2">
-        <button id="btnCriarUsuario" class="btn btn-primary">Criar Usuário</button>
-        <button id="btnExportar" class="btn btn-outline-secondary">Exportar (JSON)</button>
-        <label class="btn btn-outline-secondary mb-0">
-          Importar (JSON) <input id="inpImportar" type="file" accept="application/json" hidden>
-        </label>
-      </div>
-      <hr>
-      <div class="table-responsive" style="max-height:320px;">
-        <table class="table table-sm align-middle">
-          <thead><tr><th>Nome</th><th>E-mail</th><th>Função</th><th>Status</th><th>Ações</th></tr></thead>
-          <tbody id="usersTable"></tbody>
-        </table>
-      </div>
-      <small class="text-muted">Dados ficam no navegador (localStorage). Para testar, é perfeito.</small>
-    </div>
+        <div id="tab-adm" class="card shadow-sm p-3 hidden">
+      <h5>Gerenciar Usuários (Local)</h5>
+      <div class="row g-2">
+        <div class="col-md-4"><input id="uNome" class="form-control" placeholder="Nome completo"></div>
+        <div class="col-md-3"><input id="uEmail" type="email" class="form-control" placeholder="email@empresa.com"></div>
+        <div class="col-md-3"><input id="uSenha" type="password" class="form-control" placeholder="Senha"></div>
+        <div class="col-md-2">
+          <select id="uRole" class="form-select">
+            <option value="rep">Representante</option>
+            <option value="instr">Instrumentador</option>
+            <option value="log">Logística</option>
+            <option value="ana">Analista</option>
+            <option value="adm">Admin</option>
+          </select>
+        </div>
+      </div>
+      <div class="mt-2 d-flex gap-2">
+        <button id="btnCriarUsuario" class="btn btn-primary">Criar Usuário</button>
+        <button id="btnExportar" class="btn btn-outline-secondary">Exportar (JSON)</button>
+        <label class="btn btn-outline-secondary mb-0">
+          Importar (JSON) <input id="inpImportar" type="file" accept="application/json" hidden>
+        </label>
+      </div>
+      <hr>
+      <div class="table-responsive" style="max-height:320px;">
+        <table class="table table-sm align-middle">
+          <thead><tr><th>Nome</th><th>E-mail</th><th>Função</th><th>Status</th><th>Ações</th></tr></thead>
+          <tbody id="usersTable"></tbody>
+        </table>
+      </div>
+      <small class="text-muted">Dados ficam no navegador (localStorage). Para testar, é perfeito.</small>
+    </div>
 
-    <div id="downloadArea" class="mt-3"></div>
-  </div>
+    <div id="downloadArea" class="mt-3"></div>
+  </div>
 
 <script>
 
 window.addEventListener('unhandledrejection', (ev)=>{
-  console.error('Unhandled promise rejection:', ev.reason);
-  // garante que ao menos alguma tela apareça
-  if (document.getElementById('loginView').classList.contains('hidden') &&
-      document.getElementById('setupAdminView').classList.contains('hidden') &&
-      document.getElementById('appView').classList.contains('hidden')) {
-    show('loginView', true); // mostra login para não ficar branco
-  }
+  console.error('Unhandled promise rejection:', ev.reason);
+  // garante que ao menos alguma tela apareça
+  if (document.getElementById('loginView').classList.contains('hidden') &&
+      document.getElementById('setupAdminView').classList.contains('hidden') &&
+      document.getElementById('appView').classList.contains('hidden')) {
+    show('loginView', true); // mostra login para não ficar branco
+  }
 });
 
 /* ======= STORAGE KEYS ======= */
 const STORAGE_USERS = 'mvp_users_v1';
-const STORAGE_DOCS  = 'mvp_docs_v1';
+const STORAGE_DOCS  = 'mvp_docs_v1';
 window._pdfStore = window._pdfStore || {}; // protocolo -> blobURL (apenas sessão)
 
 /* ======= UTILS ======= */
@@ -257,88 +246,86 @@ function saveJSON(key, obj){ localStorage.setItem(key, JSON.stringify(obj)); }
 function loadJSON(key){ try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; } }
 // Cache local em memória (para renderização)
 let _usersCache = [];
-let _docsCache  = [];
+let _docsCache  = [];
 
+// === USUÁRIOS (REMOTE) ===
 async function fetchUsers() {
-  try {
-    const res = await fetch('/api/users', { headers: { 'accept': 'application/json' } });
-    if (!res.ok) { console.error('users API status', res.status); _usersCache = []; return _usersCache; }
-    // protege caso volte HTML/erro
-    const text = await res.text();
-    try { _usersCache = JSON.parse(text); } catch { console.error('users JSON inválido:', text.slice(0,120)); _usersCache = []; }
-  } catch (e) {
-    console.error('users fetch falhou:', e);
-    _usersCache = [];
-  }
-  return _usersCache;
+  try {
+    const res = await fetch('/api/users', { headers: { 'accept': 'application/json' } });
+    if (!res.ok) { console.error('users API status', res.status); _usersCache = []; return _usersCache; }
+    // protege caso volte HTML/erro
+    const text = await res.text();
+    try { _usersCache = JSON.parse(text); } catch { console.error('users JSON inválido:', text.slice(0,120)); _usersCache = []; }
+  } catch (e) {
+    console.error('users fetch falhou:', e);
+    _usersCache = [];
+  }
+  return _usersCache;
 }
-function users() {           // getter síncrono
-  return _usersCache;
+function users() {           // getter síncrono
+  return _usersCache;
 }
 
 async function createUserRemote({ nome, email, senha, role }) {
-  const res = await fetch('/api/users', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ nome, email, senha, role, ativo: true })
-  });
-  if (!res.ok) throw new Error((await res.json()).error || 'Erro ao criar usuário');
-  const u = await res.json();
-  _usersCache.push(u);       // mantém cache
-  return u;
+  const res = await fetch('/api/users', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ nome, email, senha, role, ativo: true })
+  });
+  if (!res.ok) throw new Error((await res.json()).error || 'Erro ao criar usuário');
+  const u = await res.json();
+  _usersCache.push(u);       // mantém cache
+  return u;
 }
 
 async function toggleUserActive(email){
-  const u = _usersCache.find(x => x.email.toLowerCase() === email.toLowerCase());
-  const patch = { ativo: !(u?.ativo !== false) };
-  const res = await fetch('/api/users', {
-    method: 'PUT',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ email, patch })
-  });
-  if (!res.ok) throw new Error((await res.json()).error || 'Erro ao atualizar usuário');
-  const updated = await res.json();
-  const i = _usersCache.findIndex(x => x.email.toLowerCase() === email.toLowerCase());
-  if (i >= 0) _usersCache[i] = updated;
-  return updated;
+  const u = _usersCache.find(x => x.email.toLowerCase() === email.toLowerCase());
+  const patch = { ativo: !(u?.ativo !== false) };
+  const res = await fetch('/api/users', {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email, patch })
+  });
+  if (!res.ok) throw new Error((await res.json()).error || 'Erro ao atualizar usuário');
+  const updated = await res.json();
+  const i = _usersCache.findIndex(x => x.email.toLowerCase() === email.toLowerCase());
+  if (i >= 0) _usersCache[i] = updated;
+  return updated;
 }
 
 
 // === DOCUMENTOS (REMOTE) ===
-// === DOCUMENTOS (REMOTE) ===
-let _docsCache = []; // cache em memória
-
 async function fetchDocs(){
-  const res = await fetch('/api/docs');
-  _docsCache = await res.json();
-  return _docsCache;
+  const res = await fetch('/api/docs');
+  _docsCache = await res.json();
+  return _docsCache;
 }
-function docs(){             // getter síncrono
-  return _docsCache;
+function docs(){             // getter síncrono
+  return _docsCache;
 }
 
 async function addDocRemote(entry){
-  const res = await fetch('/api/docs', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(entry)
-  });
-  if (!res.ok) throw new Error((await res.json()).error || 'Erro ao salvar documento');
-  const saved = await res.json();
-  _docsCache.unshift(saved); // mantém cache
-  return saved;
+  const res = await fetch('/api/docs', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(entry)
+  });
+  if (!res.ok) throw new Error((await res.json()).error || 'Erro ao salvar documento');
+  const saved = await res.json();
+  _docsCache.unshift(saved); // mantém cache
+  return saved;
 }
 async function patchDocRemote(proto, patch){
-  const res = await fetch('/api/docs', {
-    method: 'PATCH',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ proto, patch })
-  });
-  if (!res.ok) throw new Error((await res.json()).error || 'Erro ao atualizar documento');
-  const saved = await res.json();
-  const i = _docsCache.findIndex(x => x.proto === proto);
-  if (i >= 0) _docsCache[i] = saved;
-  return saved;
+  const res = await fetch('/api/docs', {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ proto, patch })
+  });
+  if (!res.ok) throw new Error((await res.json()).error || 'Erro ao atualizar documento');
+  const saved = await res.json();
+  const i = _docsCache.findIndex(x => x.proto === proto);
+  if (i >= 0) _docsCache[i] = saved;
+  return saved;
 }
 
 // (se existir sua função setDocs antiga, simplifique-a para manter o cache)
@@ -348,27 +335,27 @@ function setDocs(d){ _docsCache = d; }
 function newProtocol(){ return `ASER-${new Date().getFullYear()}-${Math.floor(Math.random()*1e6).toString().padStart(6,'0')}`; }
 
 function statusBadge(s){
-  const cls = s==='Resolvido' ? 'text-bg-success' : s==='Finalizado' ? 'text-bg-primary' : 'text-bg-secondary';
-  return `<span class="badge ${cls}">${s}</span>`;
+  const cls = s==='Resolvido' ? 'text-bg-success' : s==='Finalizado' ? 'text-bg-primary' : 'text-bg-secondary';
+  return `<span class="badge ${cls}">${s}</span>`;
 }
 
 /* ======= VIEW CONTROL ======= */
 function show(el, on=true){ document.getElementById(el).classList.toggle('hidden', !on); }
 
 async function boot(){
-  try{
-    const list = await users().catch(()=>[]);
-    const hasUsers = Array.isArray(list) && list.length > 0;
-    show('setupAdminView', !hasUsers);
-    show('loginView', hasUsers);
-    show('appView', false);
-  }catch(e){
-    console.error('Falha no boot:', e);
-    // Fallback seguro: mostra setup para não ficar tela branca
-    show('setupAdminView', true);
-    show('loginView', false);
-    show('appView', false);
-  }
+  try{
+    const list = await users().catch(()=>[]);
+    const hasUsers = Array.isArray(list) && list.length > 0;
+    show('setupAdminView', !hasUsers);
+    show('loginView', hasUsers);
+    show('appView', false);
+  }catch(e){
+    console.error('Falha no boot:', e);
+    // Fallback seguro: mostra setup para não ficar tela branca
+    show('setupAdminView', true);
+    show('loginView', false);
+    show('appView', false);
+  }
 }
 
 
@@ -377,147 +364,147 @@ boot();
 /* ======= SETUP ADMIN ======= */
 /* ======= SETUP ADMIN ======= */
 document.getElementById('btnCriarAdmin').addEventListener('click', async ()=>{
-  const nome = document.getElementById('saNome').value.trim();
-  const email= document.getElementById('saEmail').value.trim();
-  const senha= document.getElementById('saSenha').value.trim();
-  if(!nome||!email||!senha){ alert('Preencha todos os campos.'); return; }
+  const nome = document.getElementById('saNome').value.trim();
+  const email= document.getElementById('saEmail').value.trim();
+  const senha= document.getElementById('saSenha').value.trim();
+  if(!nome||!email||!senha){ alert('Preencha todos os campos.'); return; }
 
-  const list = await users(); // busca na KV
-  if(Array.isArray(list) && list.some(x=>x.email.toLowerCase()===email.toLowerCase())){
-    alert('Já existe usuário com este e-mail.');
-    return;
-  }
+  const list = await users(); // busca na KV
+  if(Array.isArray(list) && list.some(x=>x.email.toLowerCase()===email.toLowerCase())){
+    alert('Já existe usuário com este e-mail.');
+    return;
+  }
 
-  await createUserRemote({ nome, email, senha, role:'adm' });
+  await createUserRemote({ nome, email, senha, role:'adm' });
 
-  alert('ADMIN criado com sucesso! Faça login.');
-  show('setupAdminView', false);
-  show('loginView', true);
+  alert('ADMIN criado com sucesso! Faça login.');
+  show('setupAdminView', false);
+  show('loginView', true);
 });
 
 
 
 /* ======= LOGIN ======= */
 async function setView(user){
-  show('loginView', false);
-  show('setupAdminView', false);
-  show('appView', true);
+  show('loginView', false);
+  show('setupAdminView', false);
+  show('appView', true);
 
-  const roleLabel = user.role==='rep' ? 'REP'
-                   : user.role==='instr' ? 'INSTR'
-                   : user.role==='log' ? 'LOG'
-                   : user.role==='ana' ? 'ANA' : 'ADMIN';
-  document.getElementById('userBadge').textContent = `${user.nome} • ${roleLabel}`;
+  const roleLabel = user.role==='rep' ? 'REP'
+                   : user.role==='instr' ? 'INSTR'
+                   : user.role==='log' ? 'LOG'
+                   : user.role==='ana' ? 'ANA' : 'ADMIN';
+  document.getElementById('userBadge').textContent = `${user.nome} • ${roleLabel}`;
 
-  document.querySelectorAll('.repTab').forEach(el=>el.classList.toggle('hidden', !(user.role==='rep'||user.role==='instr')));
-  document.querySelectorAll('.logTab').forEach(el=>el.classList.toggle('hidden', user.role!=='log'));
-  document.querySelectorAll('.anaTab').forEach(el=>el.classList.toggle('hidden', user.role!=='ana'));
-  document.querySelectorAll('.admTab').forEach(el=>el.classList.toggle('hidden', user.role!=='adm'));
+  document.querySelectorAll('.repTab').forEach(el=>el.classList.toggle('hidden', !(user.role==='rep'||user.role==='instr')));
+  document.querySelectorAll('.logTab').forEach(el=>el.classList.toggle('hidden', user.role!=='log'));
+  document.querySelectorAll('.anaTab').forEach(el=>el.classList.toggle('hidden', user.role!=='ana'));
+  document.querySelectorAll('.admTab').forEach(el=>el.classList.toggle('hidden', user.role!=='adm'));
 
-  if(user.role==='rep'||user.role==='instr') showTab('#tab-rep');
-  else if(user.role==='log') showTab('#tab-log');
-  else if(user.role==='ana') showTab('#tab-ana');
-  else showTab('#tab-adm');
+  if(user.role==='rep'||user.role==='instr') showTab('#tab-rep');
+  else if(user.role==='log') showTab('#tab-log');
+  else if(user.role==='ana') showTab('#tab-ana');
+  else showTab('#tab-adm');
 
-  // 🔑 carrega os documentos da nuvem (KV) antes de desenhar as tabelas
+  // 🔑 carrega os documentos da nuvem (KV) antes de desenhar as tabelas
 
 await fetchDocs();
 
 
-  renderTables();
-  renderUsersTable();
-  updateActionBarVisibility();
+  renderTables();
+  renderUsersTable();
+  updateActionBarVisibility();
 }
 
 document.getElementById('btnLogin').addEventListener('click', async ()=>{
-  const email = document.getElementById('email').value.trim();
-  const pass  = document.getElementById('password').value.trim();
-  const selectedRole = document.getElementById('role').value;
+  const email = document.getElementById('email').value.trim();
+  const pass  = document.getElementById('password').value.trim();
+  const selectedRole = document.getElementById('role').value;
 
-  if(!email||!pass){ alert('Preencha e-mail e senha'); return; }
+  if(!email||!pass){ alert('Preencha e-mail e senha'); return; }
 
-  const list = await users(); // <- agora sim
-  const u = Array.isArray(list) ? list.find(x =>
-    x.email.toLowerCase()===email.toLowerCase() && x.senha===pass && x.ativo!==false
-  ) : null;
+  const list = await users(); // <- agora sim
+  const u = Array.isArray(list) ? list.find(x =>
+    x.email.toLowerCase()===email.toLowerCase() && x.senha===pass && x.ativo!==false
+  ) : null;
 
-  if(!u){ alert('Login ou senha incorretos!'); return; }
-  if(u.role !== selectedRole){ alert('Perfil incompatível com seus dados!'); return; }
+  if(!u){ alert('Login ou senha incorretos!'); return; }
+  if(u.role !== selectedRole){ alert('Perfil incompatível com seus dados!'); return; }
 
-  const user = { email:u.email, role:u.role, nome:u.nome };
-  sessionStorage.setItem('mvp_user', JSON.stringify(user));
-  setView(user);
+  const user = { email:u.email, role:u.role, nome:u.nome };
+  sessionStorage.setItem('mvp_user', JSON.stringify(user));
+  setView(user);
 });
 
 
 document.getElementById('btnLogout').addEventListener('click', ()=>{
-  sessionStorage.removeItem('mvp_user');
-  show('appView', false); show('loginView', true);
+  sessionStorage.removeItem('mvp_user');
+  show('appView', false); show('loginView', true);
 });
 
 document.getElementById('btnClear').addEventListener('click', ()=>{
-  if(!confirm('Isso apaga TODOS os dados locais (usuários, documentos). Continuar?')) return;
-  localStorage.removeItem(STORAGE_USERS);
-  localStorage.removeItem(STORAGE_DOCS);
-  window._pdfStore = {};
-  sessionStorage.removeItem('mvp_user');
-  location.reload();
+  if(!confirm('Isso apaga TODOS os dados locais (usuários, documentos). Continuar?')) return;
+  localStorage.removeItem(STORAGE_USERS);
+  localStorage.removeItem(STORAGE_DOCS);
+  window._pdfStore = {};
+  sessionStorage.removeItem('mvp_user');
+  location.reload();
 });
 
 /* ======= TABS ======= */
 function showTab(sel){
-  document.querySelectorAll('[id^="tab-"]').forEach(div=>div.classList.add('hidden'));
-  document.querySelector(sel).classList.remove('hidden');
-  document.querySelectorAll('#tabs .nav-link').forEach(b=>b.classList.remove('active'));
-  document.querySelector(`#tabs .nav-link[data-target="${sel}"]`)?.classList.add('active');
-  updateActionBarVisibility(); // <- barra fixa só quando cabível
+  document.querySelectorAll('[id^="tab-"]').forEach(div=>div.classList.add('hidden'));
+  document.querySelector(sel).classList.remove('hidden');
+  document.querySelectorAll('#tabs .nav-link').forEach(b=>b.classList.remove('active'));
+  document.querySelector(`#tabs .nav-link[data-target="${sel}"]`)?.classList.add('active');
+  updateActionBarVisibility(); // <- barra fixa só quando cabível
 }
 document.querySelectorAll('#tabs .nav-link').forEach(btn=>btn.addEventListener('click', ()=> showTab(btn.dataset.target)));
 
 /* ======= Controle da barra fixa (mobile) ======= */
 function updateActionBarVisibility() {
-  const bar = document.getElementById('repActionBar');
-  if (!bar) return;
-  const user = JSON.parse(sessionStorage.getItem('mvp_user') || 'null');
-  const isRepRole = user && (user.role === 'rep' || user.role === 'instr');
-  const active = document.querySelector('#tabs .nav-link.active');
-  const inRepTab = !!active && active.dataset.target === '#tab-rep';
-  bar.style.display = (isRepRole && inRepTab) ? '' : 'none';
+  const bar = document.getElementById('repActionBar');
+  if (!bar) return;
+  const user = JSON.parse(sessionStorage.getItem('mvp_user') || 'null');
+  const isRepRole = user && (user.role === 'rep' || user.role === 'instr');
+  const active = document.querySelector('#tabs .nav-link.active');
+  const inRepTab = !!active && active.dataset.target === '#tab-rep';
+  bar.style.display = (isRepRole && inRepTab) ? '' : 'none';
 }
 
 /* ======= REP — imagens/PDF ======= */
 function toCanvas(img, maxSide=1600){
-  const cvs=document.createElement('canvas'); let{width,height}=img;
-  const scale=Math.min(1, maxSide/Math.max(width,height)); width=Math.round(width*scale); height=Math.round(height*scale);
-  cvs.width=width;cvs.height=height; cvs.getContext('2d').drawImage(img,0,0,width,height); return cvs;
+  const cvs=document.createElement('canvas'); let{width,height}=img;
+  const scale=Math.min(1, maxSide/Math.max(width,height)); width=Math.round(width*scale); height=Math.round(height*scale);
+  cvs.width=width;cvs.height=height; cvs.getContext('2d').drawImage(img,0,0,width,height); return cvs;
 }
 function grayscaleData(ctx,w,h){ const d=ctx.getImageData(0,0,w,h).data, g=new Float32Array(w*h); for(let i=0,j=0;i<d.length;i+=4,j++) g[j]=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2]; return {gray:g,w,h}; }
 function laplacianVariance(gray,w,h){ if(w<3||h<3)return 0; let s=0, ss=0, c=0; const idx=(x,y)=>y*w+x;
-  for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){ const L=(gray[idx(x-1,y)]+gray[idx(x+1,y)]+gray[idx(x,y-1)]+gray[idx(x,y+1)]-4*gray[idx(x,y)]); s+=L; ss+=L*L; c++; }
-  const m=s/c; return ss/c - m*m;
+  for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){ const L=(gray[idx(x-1,y)]+gray[idx(x+1,y)]+gray[idx(x,y-1)]+gray[idx(x,y+1)]-4*gray[idx(x,y)]); s+=L; ss+=L*L; c++; }
+  const m=s/c; return ss/c - m*m;
 }
 function luminanceStd(gray){ let s=0,ss=0,n=gray.length; for(let i=0;i<n;i++){ const v=gray[i]; s+=v; ss+=v*v; } const m=s/n; return Math.sqrt(ss/n - m*m); }
 function fileToImage(file){ return new Promise((res,rej)=>{ const url=URL.createObjectURL(file); const img=new Image(); img.onload=()=>{ URL.revokeObjectURL(url); res(img); }; img.onerror=rej; img.src=url; }); }
 
 let selectedFiles=[];
 function handleFiles(fileList){
-  const toArr=[...fileList];
-  const all = selectedFiles.map(x=>x.file).concat(toArr);       // acumula chamadas (câmera + galeria)
-  const limited = all.slice(0,5);                               // limita a 5
-  selectedFiles=[];                                             // recalcula tudo
-  const thumbs=document.getElementById('thumbs'); thumbs.innerHTML='';
+  const toArr=[...fileList];
+  const all = selectedFiles.map(x=>x.file).concat(toArr);       // acumula chamadas (câmera + galeria)
+  const limited = all.slice(0,5);                               // limita a 5
+  selectedFiles=[];                                             // recalcula tudo
+  const thumbs=document.getElementById('thumbs'); thumbs.innerHTML='';
 
-  (async ()=>{
-    for(const f of limited){
-      const img=await fileToImage(f); const cvs=toCanvas(img,1600); const ctx=cvs.getContext('2d');
-      const {gray,w,h}=grayscaleData(ctx,cvs.width,cvs.height); const blurVar=laplacianVariance(gray,w,h); const lumStd=luminanceStd(gray);
-      const ok=blurVar>=100 && lumStd>=18; const dataUrl=cvs.toDataURL('image/jpeg',0.75);
-      selectedFiles.push({file:f,dataUrl,ok,reason:ok?'OK':(blurVar<100?'Borrada':'Baixa luz')});
-      const imgEl=document.createElement('img'); imgEl.src=dataUrl; imgEl.className='thumb '+(ok?'ok':'bad'); imgEl.title=selectedFiles[selectedFiles.length-1].reason; thumbs.appendChild(imgEl);
-    }
-    // desabilita envio até gerar PDF
-    document.getElementById('btnEnviar').disabled=true; document.getElementById('btnEnviarMobile').disabled=true;
-  })();
+  (async ()=>{
+    for(const f of limited){
+      const img=await fileToImage(f); const cvs=toCanvas(img,1600); const ctx=cvs.getContext('2d');
+      const {gray,w,h}=grayscaleData(ctx,cvs.width,cvs.height); const blurVar=laplacianVariance(gray,w,h); const lumStd=luminanceStd(gray);
+      const ok=blurVar>=100 && lumStd>=18; const dataUrl=cvs.toDataURL('image/jpeg',0.75);
+      selectedFiles.push({file:f,dataUrl,ok,reason:ok?'OK':(blurVar<100?'Borrada':'Baixa luz')});
+      const imgEl=document.createElement('img'); imgEl.src=dataUrl; imgEl.className='thumb '+(ok?'ok':'bad'); imgEl.title=selectedFiles[selectedFiles.length-1].reason; thumbs.appendChild(imgEl);
+    }
+    // desabilita envio até gerar PDF
+    document.getElementById('btnEnviar').disabled=true; document.getElementById('btnEnviarMobile').disabled=true;
+  })();
 }
 
 // Botões -> inputs escondidos
@@ -526,340 +513,340 @@ document.getElementById('btnGaleria').addEventListener('click', ()=> document.ge
 
 // Listeners dos inputs
 document.getElementById('fileCamera').addEventListener('change', (e)=>{
-  if(!e.target.files?.length) return;
-  handleFiles(e.target.files);      // iOS pode mandar só 1 — ok
-  e.target.value='';                // permite abrir câmera de novo
+  if(!e.target.files?.length) return;
+  handleFiles(e.target.files);      // iOS pode mandar só 1 — ok
+  e.target.value='';                // permite abrir câmera de novo
 });
 document.getElementById('fileGallery').addEventListener('change', (e)=>{
-  if(!e.target.files?.length) return;
-  handleFiles(e.target.files);      // permite múltiplas no iOS/Android
-  e.target.value='';                // permite reabrir e escolher mais
+  if(!e.target.files?.length) return;
+  handleFiles(e.target.files);      // permite múltiplas no iOS/Android
+  e.target.value='';                // permite reabrir e escolher mais
 });
 
 // iOS: se por acaso algum navegador ignorar múltiplas na galeria, garantimos atributos corretos
 (function fixIOSFileInput(){
-  const ua = navigator.userAgent || navigator.vendor || window.opera;
-  const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  if (!isIOS) return;
-  const g = document.getElementById('fileGallery');
-  if (g){ g.removeAttribute('capture'); g.setAttribute('accept','image/*'); g.setAttribute('multiple','multiple'); }
+  const ua = navigator.userAgent || navigator.vendor || window.opera;
+  const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (!isIOS) return;
+  const g = document.getElementById('fileGallery');
+  if (g){ g.removeAttribute('capture'); g.setAttribute('accept','image/*'); g.setAttribute('multiple','multiple'); }
 })();
 
 async function generatePdf(){
-  if(selectedFiles.length===0){ alert('Selecione 1 a 5 imagens'); return false; }
-  const { jsPDF }=window.jspdf; const pdf=new jsPDF({orientation:'p',unit:'pt',format:'a4'}); const pageW=pdf.internal.pageSize.getWidth(); const pageH=pdf.internal.pageSize.getHeight();
-  for(let i=0;i<selectedFiles.length;i++){
-    if(i>0) pdf.addPage(); const img=new Image(); await new Promise(r=>{ img.onload=r; img.src=selectedFiles[i].dataUrl; });
-    const margin=36; const maxW=pageW-margin*2, maxH=pageH-margin*2; let w=img.width,h=img.height; const scale=Math.min(maxW/w,maxH/h); w*=scale; h*=scale;
-    pdf.addImage(selectedFiles[i].dataUrl,'JPEG',(pageW-w)/2,(pageH-h)/2,w,h);
-  }
-  const blob=pdf.output('blob'); const url=URL.createObjectURL(blob); window._lastPdfBlob=blob; window._lastPdfUrl=url;
-  document.getElementById('repMsg').innerHTML=`<div class="alert alert-info">PDF gerado (${selectedFiles.length} páginas). <a href="${url}" target="_blank" class="btn btn-sm btn-outline-secondary ms-2">Abrir</a> <a href="${url}" download="dossie.pdf" class="btn btn-sm btn-outline-primary ms-1">Baixar</a></div>`;
-  document.getElementById('btnEnviar').disabled=false; document.getElementById('btnEnviarMobile').disabled=false; return true;
+  if(selectedFiles.length===0){ alert('Selecione 1 a 5 imagens'); return false; }
+  const { jsPDF }=window.jspdf; const pdf=new jsPDF({orientation:'p',unit:'pt',format:'a4'}); const pageW=pdf.internal.pageSize.getWidth(); const pageH=pdf.internal.pageSize.getHeight();
+  for(let i=0;i<selectedFiles.length;i++){
+    if(i>0) pdf.addPage(); const img=new Image(); await new Promise(r=>{ img.onload=r; img.src=selectedFiles[i].dataUrl; });
+    const margin=36; const maxW=pageW-margin*2, maxH=pageH-margin*2; let w=img.width,h=img.height; const scale=Math.min(maxW/w,maxH/h); w*=scale; h*=scale;
+    pdf.addImage(selectedFiles[i].dataUrl,'JPEG',(pageW-w)/2,(pageH-h)/2,w,h);
+  }
+  const blob=pdf.output('blob'); const url=URL.createObjectURL(blob); window._lastPdfBlob=blob; window._lastPdfUrl=url;
+  document.getElementById('repMsg').innerHTML=`<div class="alert alert-info">PDF gerado (${selectedFiles.length} páginas). <a href="${url}" target="_blank" class="btn btn-sm btn-outline-secondary ms-2">Abrir</a> <a href="${url}" download="dossie.pdf" class="btn btn-sm btn-outline-primary ms-1">Baixar</a></div>`;
+  document.getElementById('btnEnviar').disabled=false; document.getElementById('btnEnviarMobile').disabled=false; return true;
 }
 document.getElementById('btnGenPdf').addEventListener('click', generatePdf);
 document.getElementById('btnGenPdfMobile').addEventListener('click', ()=>document.getElementById('btnGenPdf').click());
 
 /* ======= Upload para Blob (com barra de progresso) ======= */
 async function uploadPdfToBlob(protoOrName, blob){
-  const buffer = await blob.arrayBuffer();
-  const filename = `${protoOrName}.pdf`;
+  const buffer = await blob.arrayBuffer();
+  const filename = `${protoOrName}.pdf`;
 
-  const xhr = new XMLHttpRequest();
-  const url  = '/api/upload';
+  const xhr = new XMLHttpRequest();
+  const url  = '/api/upload';
 
-  const p = new Promise((resolve, reject)=>{
-    xhr.onreadystatechange = () => {
-      if (xhr.readyState === 4) {
-        document.getElementById('upBarWrap').style.display = 'none';
-        document.getElementById('upBar').style.width = '0%';
-        if (xhr.status >= 200 && xhr.status < 300) {
-          resolve(JSON.parse(xhr.responseText)); // {url}
-        } else {
-          reject(new Error(xhr.responseText || 'Falha no upload'));
-        }
-      }
-    };
-    xhr.upload.onprogress = (ev)=>{
-      if (!ev.lengthComputable) return;
-      const pct = Math.round((ev.loaded / ev.total) * 100);
-      const wrap = document.getElementById('upBarWrap');
-      const bar  = document.getElementById('upBar');
-      wrap.style.display = 'block';
-      bar.style.width = pct + '%';
-      bar.style.background = pct < 50 ? '#f59e0b' : (pct < 100 ? '#3b82f6' : '#10b981');
-    };
-    xhr.open('POST', url, true);
-    xhr.setRequestHeader('content-type', 'application/pdf');
-    xhr.setRequestHeader('x-filename', encodeURIComponent(filename));
-    xhr.send(buffer);
-  });
+  const p = new Promise((resolve, reject)=>{
+    xhr.onreadystatechange = () => {
+      if (xhr.readyState === 4) {
+        document.getElementById('upBarWrap').style.display = 'none';
+        document.getElementById('upBar').style.width = '0%';
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(JSON.parse(xhr.responseText)); // {url}
+        } else {
+          reject(new Error(xhr.responseText || 'Falha no upload'));
+        }
+      }
+    };
+    xhr.upload.onprogress = (ev)=>{
+      if (!ev.lengthComputable) return;
+      const pct = Math.round((ev.loaded / ev.total) * 100);
+      const wrap = document.getElementById('upBarWrap');
+      const bar  = document.getElementById('upBar');
+      wrap.style.display = 'block';
+      bar.style.width = pct + '%';
+      bar.style.background = pct < 50 ? '#f59e0b' : (pct < 100 ? '#3b82f6' : '#10b981');
+    };
+    xhr.open('POST', url, true);
+    xhr.setRequestHeader('content-type', 'application/pdf');
+    xhr.setRequestHeader('x-filename', encodeURIComponent(filename));
+    xhr.send(buffer);
+  });
 
-  const data = await p; // { url }
-  return data.url;
+  const data = await p; // { url }
+  return data.url;
 }
 
 /* ======= Envio: registra + sobe PDF + fallback local ======= */
 function doSend(){
-  if(!window._lastPdfBlob){ alert('Gere o PDF primeiro'); return; }
-  const paciente=document.getElementById('inpPaciente').value.trim()||'ID-S/ NOME';
-  const medico=document.getElementById('inpMedico').value.trim()||'—';
-  const hospital=document.getElementById('inpHospital').value.trim()||'—';
-  const convenio=document.getElementById('inpConvenio').value.trim()||'—';
+  if(!window._lastPdfBlob){ alert('Gere o PDF primeiro'); return; }
+  const paciente=document.getElementById('inpPaciente').value.trim()||'ID-S/ NOME';
+  const medico=document.getElementById('inpMedico').value.trim()||'—';
+  const hospital=document.getElementById('inpHospital').value.trim()||'—';
+  const convenio=document.getElementById('inpConvenio').value.trim()||'—';
 
-  const proto=newProtocol();
+  const proto=newProtocol();
 
-  // nome de arquivo seguro: paciente + protocolo
-  const safe = (s)=> s.replace(/[^a-z0-9-_]+/gi,'_').slice(0,50);
-  const nomeBase = `${safe(paciente)}_${proto}`;
+  // nome de arquivo seguro: paciente + protocolo
+  const safe = (s)=> s.replace(/[^a-z0-9-_]+/gi,'_').slice(0,50);
+  const nomeBase = `${safe(paciente)}_${proto}`;
 
-  let publicUrl = null;
-  (async () => {
-    try {
-      // trava botões enquanto envia
-      document.getElementById('btnEnviar').disabled=true; 
-      document.getElementById('btnEnviarMobile').disabled=true;
-      document.getElementById('repMsg').innerHTML = '<div class="alert alert-secondary">Enviando… aguarde.</div>';
+  let publicUrl = null;
+  (async () => {
+    try {
+      // trava botões enquanto envia
+      document.getElementById('btnEnviar').disabled=true; 
+      document.getElementById('btnEnviarMobile').disabled=true;
+      document.getElementById('repMsg').innerHTML = '<div class="alert alert-secondary">Enviando… aguarde.</div>';
 
-      publicUrl = await uploadPdfToBlob(nomeBase, window._lastPdfBlob);
-    } catch (e) {
-      console.error('Falha no upload do PDF para o Blob:', e);
-      // segue com o PDF local na sessão
-    }
+      publicUrl = await uploadPdfToBlob(nomeBase, window._lastPdfBlob);
+    } catch (e) {
+      console.error('Falha no upload do PDF para o Blob:', e);
+      // segue com o PDF local na sessão
+    }
 
-    const entry = {
-      proto, paciente, medico, hospital, convenio,
-      status: 'Recebido',
-      createdAt: new Date().toISOString(),
-      url: publicUrl || null
-    };
-    await addDocRemote(entry);
+    const entry = {
+      proto, paciente, medico, hospital, convenio,
+      status: 'Recebido',
+      createdAt: new Date().toISOString(),
+      url: publicUrl || null
+    };
+    await addDocRemote(entry);
 
-    const blobUrl=URL.createObjectURL(window._lastPdfBlob);
-    window._pdfStore[proto]=blobUrl;
+    const blobUrl=URL.createObjectURL(window._lastPdfBlob);
+    window._pdfStore[proto]=blobUrl;
 
-    selectedFiles=[]; document.getElementById('thumbs').innerHTML=''; 
-    document.getElementById('repMsg').innerHTML=`<div class="alert alert-success">Enviado! Protocolo: <strong>${proto}</strong></div>`;
-    document.getElementById('inpPaciente').value=''; document.getElementById('inpMedico').value=''; document.getElementById('inpHospital').value=''; document.getElementById('inpConvenio').value='';
-    await docs(); renderTables();
-  })();
+    selectedFiles=[]; document.getElementById('thumbs').innerHTML=''; 
+    document.getElementById('repMsg').innerHTML=`<div class="alert alert-success">Enviado! Protocolo: <strong>${proto}</strong></div>`;
+    document.getElementById('inpPaciente').value=''; document.getElementById('inpMedico').value=''; document.getElementById('inpHospital').value=''; document.getElementById('inpConvenio').value='';
+    await docs(); renderTables();
+  })();
 }
 document.getElementById('btnEnviar').addEventListener('click', doSend);
 document.getElementById('btnEnviarMobile').addEventListener('click', ()=>document.getElementById('btnEnviar').click());
 
 /* ======= TABELAS + FILTROS ======= */
 function renderTables(){
-  const d=_docsCache;
+  const d=_docsCache;
 
-  // Logística
-  const logTbody=document.getElementById('logTable'); logTbody.innerHTML='';
-  d.filter(x=>x.status!=='Resolvido').forEach(x=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${x.proto}</td><td>${x.paciente}</td><td>${x.medico}</td><td>${x.hospital}</td><td>${x.convenio}</td><td>${statusBadge(x.status)}</td><td></td>`;
-    const td=tr.querySelector('td:last-child');
+  // Logística
+  const logTbody=document.getElementById('logTable'); logTbody.innerHTML='';
+  d.filter(x=>x.status!=='Resolvido').forEach(x=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${x.proto}</td><td>${x.paciente}</td><td>${x.medico}</td><td>${x.hospital}</td><td>${x.convenio}</td><td>${statusBadge(x.status)}</td><td></td>`;
+    const td=tr.querySelector('td:last-child');
 
-    const btnView=document.createElement('button'); 
-    btnView.className='btn btn-sm btn-outline-secondary me-1'; 
-    btnView.textContent='Ver PDF';
+    const btnView=document.createElement('button'); 
+    btnView.className='btn btn-sm btn-outline-secondary me-1'; 
+    btnView.textContent='Ver PDF';
 
-    // LINK ONLINE (se existir)
-    if (x.url) {
-      const aOnline = document.createElement('a');
-      aOnline.href = x.url;
-      aOnline.target = '_blank';
-      aOnline.className = 'btn btn-sm btn-outline-success me-1';
-      aOnline.textContent = 'Ver PDF (online)';
-      td.appendChild(aOnline);
-    }
+    // LINK ONLINE (se existir)
+    if (x.url) {
+      const aOnline = document.createElement('a');
+      aOnline.href = x.url;
+      aOnline.target = '_blank';
+      aOnline.className = 'btn btn-sm btn-outline-success me-1';
+      aOnline.textContent = 'Ver PDF (online)';
+      td.appendChild(aOnline);
+    }
 
-    // DOWNLOAD local com fallback online
-    btnView.onclick=()=>{ 
-      let url = window._pdfStore[x.proto]; 
-      if(!url && x.url){ window.open(x.url, '_blank'); return; }
-      if(!url){ alert('PDF não encontrado nesta sessão. Use "Ver PDF (online)".'); return; }
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${x.paciente}_${x.proto}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    };
-    td.appendChild(btnView);
+    // DOWNLOAD local com fallback online
+    btnView.onclick=()=>{ 
+      let url = window._pdfStore[x.proto]; 
+      if(!url && x.url){ window.open(x.url, '_blank'); return; }
+      if(!url){ alert('PDF não encontrado nesta sessão. Use "Ver PDF (online)".'); return; }
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${x.paciente}_${x.proto}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    };
+    td.appendChild(btnView);
 
-    if(x.status==='Recebido'){
-      const btnFin=document.createElement('button'); 
-      btnFin.className='btn btn-sm btn-success'; 
-      btnFin.textContent='Finalizar'; 
-      btnFin.onclick=async ()=>{ await patchDocRemote(x.proto,{status:'Finalizado'}); await docs(); renderTables(); }; 
-      td.appendChild(btnFin);
-    }
-    logTbody.appendChild(tr);
-  });
+    if(x.status==='Recebido'){
+      const btnFin=document.createElement('button'); 
+      btnFin.className='btn btn-sm btn-success'; 
+      btnFin.textContent='Finalizar'; 
+      btnFin.onclick=async ()=>{ await patchDocRemote(x.proto,{status:'Finalizado'}); await docs(); renderTables(); }; 
+      td.appendChild(btnFin);
+    }
+    logTbody.appendChild(tr);
+  });
 
-  // Analista
-  const anaTbody=document.getElementById('anaTable'); anaTbody.innerHTML='';
-  d.filter(x=>x.status==='Finalizado').forEach(x=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${x.proto}</td><td>${x.paciente}</td><td>${x.medico}</td><td>${x.hospital}</td><td>${x.convenio}</td><td>${statusBadge(x.status)}</td><td></td>`;
-    const td=tr.querySelector('td:last-child');
+  // Analista
+  const anaTbody=document.getElementById('anaTable'); anaTbody.innerHTML='';
+  d.filter(x=>x.status==='Finalizado').forEach(x=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${x.proto}</td><td>${x.paciente}</td><td>${x.medico}</td><td>${x.hospital}</td><td>${x.convenio}</td><td>${statusBadge(x.status)}</td><td></td>`;
+    const td=tr.querySelector('td:last-child');
 
-    const btnView=document.createElement('button'); 
-    btnView.className='btn btn-sm btn-outline-secondary me-1'; 
-    btnView.textContent='Ver PDF';
+    const btnView=document.createElement('button'); 
+    btnView.className='btn btn-sm btn-outline-secondary me-1'; 
+    btnView.textContent='Ver PDF';
 
-    if (x.url) {
-      const aOnline = document.createElement('a');
-      aOnline.href = x.url;
-      aOnline.target = '_blank';
-      aOnline.className = 'btn btn-sm btn-outline-success me-1';
-      aOnline.textContent = 'Ver PDF (online)';
-      td.appendChild(aOnline);
-    }
+    if (x.url) {
+      const aOnline = document.createElement('a');
+      aOnline.href = x.url;
+      aOnline.target = '_blank';
+      aOnline.className = 'btn btn-sm btn-outline-success me-1';
+      aOnline.textContent = 'Ver PDF (online)';
+      td.appendChild(aOnline);
+    }
 
-    btnView.onclick=()=>{ 
-      let url = window._pdfStore[x.proto]; 
-      if(!url && x.url){ window.open(x.url, '_blank'); return; }
-      if(!url){ alert('PDF não encontrado nesta sessão. Use "Ver PDF (online)".'); return; }
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${x.paciente}_${x.proto}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    };
+    btnView.onclick=()=>{ 
+      let url = window._pdfStore[x.proto]; 
+      if(!url && x.url){ window.open(x.url, '_blank'); return; }
+      if(!url){ alert('PDF não encontrado nesta sessão. Use "Ver PDF (online)".'); return; }
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${x.paciente}_${x.proto}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    };
 
-    const btnRes=document.createElement('button'); 
-    btnRes.className='btn btn-sm btn-primary'; 
-    btnRes.textContent='Resolvido';
-    btnRes.onclick=async ()=>{ await patchDocRemote(x.proto,{status:'Resolvido'}); await docs(); renderTables(); };
+    const btnRes=document.createElement('button'); 
+    btnRes.className='btn btn-sm btn-primary'; 
+    btnRes.textContent='Resolvido';
+    btnRes.onclick=async ()=>{ await patchDocRemote(x.proto,{status:'Resolvido'}); await docs(); renderTables(); };
 
-    td.appendChild(btnView); 
-    td.appendChild(btnRes);
-    anaTbody.appendChild(tr);
-  });
+    td.appendChild(btnView); 
+    td.appendChild(btnRes);
+    anaTbody.appendChild(tr);
+  });
 }
 
 document.getElementById('btnFilter').addEventListener('click', ()=> applyFilter());
 document.getElementById('btnFilterAna').addEventListener('click', ()=> applyFilter(true));
 async function applyFilter(analista=false){
-  await docs();
-  const d=_docsCache;
-  const p=(analista?document.getElementById('aPaciente').value:document.getElementById('fPaciente').value).trim().toLowerCase();
-  const m=(analista?document.getElementById('aMedico').value:document.getElementById('fMedico').value).trim().toLowerCase();
-  const pr=(analista?document.getElementById('aProto').value:document.getElementById('fProto').value).trim().toLowerCase();
-  const stSel=(analista?document.getElementById('aStatus').value:document.getElementById('fStatus').value);
-  const tbody=document.getElementById(analista?'anaTable':'logTable'); tbody.innerHTML='';
+  await docs();
+  const d=_docsCache;
+  const p=(analista?document.getElementById('aPaciente').value:document.getElementById('fPaciente').value).trim().toLowerCase();
+  const m=(analista?document.getElementById('aMedico').value:document.getElementById('fMedico').value).trim().toLowerCase();
+  const pr=(analista?document.getElementById('aProto').value:document.getElementById('fProto').value).trim().toLowerCase();
+  const stSel=(analista?document.getElementById('aStatus').value:document.getElementById('fStatus').value);
+  const tbody=document.getElementById(analista?'anaTable':'logTable'); tbody.innerHTML='';
 
-  let list=d.filter(x=>{
-    if(p && !x.paciente.toLowerCase().includes(p)) return false;
-    if(m && !x.medico.toLowerCase().includes(m)) return false;
-    if(pr && !x.proto.toLowerCase().includes(pr)) return false;
-    if(stSel && stSel!=='TODOS' && x.status!==stSel) return false;
-    return true;
-  });
-  if(stSel==='TODOS'){
-    list=list.filter(x=> analista ? x.status!=='Recebido' : true);
-  }
+  let list=d.filter(x=>{
+    if(p && !x.paciente.toLowerCase().includes(p)) return false;
+    if(m && !x.medico.toLowerCase().includes(m)) return false;
+    if(pr && !x.proto.toLowerCase().includes(pr)) return false;
+    if(stSel && stSel!=='TODOS' && x.status!==stSel) return false;
+    return true;
+  });
+  if(stSel==='TODOS'){
+    list=list.filter(x=> analista ? x.status!=='Recebido' : true);
+  }
 
-  list.forEach(x=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${x.proto}</td><td>${x.paciente}</td><td>${x.medico}</td><td>${x.hospital}</td><td>${x.convenio}</td><td>${statusBadge(x.status)}</td><td></td>`;
-    const td=tr.querySelector('td:last-child');
+  list.forEach(x=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${x.proto}</td><td>${x.paciente}</td><td>${x.medico}</td><td>${x.hospital}</td><td>${x.convenio}</td><td>${statusBadge(x.status)}</td><td></td>`;
+    const td=tr.querySelector('td:last-child');
 
-    const btnView=document.createElement('button'); 
-    btnView.className='btn btn-sm btn-outline-secondary me-1'; 
-    btnView.textContent='Ver PDF';
+    const btnView=document.createElement('button'); 
+    btnView.className='btn btn-sm btn-outline-secondary me-1'; 
+    btnView.textContent='Ver PDF';
 
-    if (x.url) {
-      const aOnline = document.createElement('a');
-      aOnline.href = x.url;
-      aOnline.target = '_blank';
-      aOnline.className = 'btn btn-sm btn-outline-success me-1';
-      aOnline.textContent = 'Ver PDF (online)';
-      td.appendChild(aOnline);
-    }
+    if (x.url) {
+      const aOnline = document.createElement('a');
+      aOnline.href = x.url;
+      aOnline.target = '_blank';
+      aOnline.className = 'btn btn-sm btn-outline-success me-1';
+      aOnline.textContent = 'Ver PDF (online)';
+      td.appendChild(aOnline);
+    }
 
-    btnView.onclick=()=>{ 
-      let url = window._pdfStore[x.proto]; 
-      if(!url && x.url){ window.open(x.url, '_blank'); return; }
-      if(!url){ alert('PDF não encontrado nesta sessão. Use "Ver PDF (online)".'); return; }
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${x.paciente}_${x.proto}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    };
+    btnView.onclick=()=>{ 
+      let url = window._pdfStore[x.proto]; 
+      if(!url && x.url){ window.open(x.url, '_blank'); return; }
+      if(!url){ alert('PDF não encontrado nesta sessão. Use "Ver PDF (online)".'); return; }
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${x.paciente}_${x.proto}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    };
 
-    td.appendChild(btnView);
+    td.appendChild(btnView);
 
-    if(x.status==='Recebido' && !analista){
-      const btnFin=document.createElement('button'); btnFin.className='btn btn-sm btn-success'; btnFin.textContent='Finalizar';
-      btnFin.onclick=async ()=>{ await patchDocRemote(x.proto,{status:'Finalizado'}); await docs(); renderTables(); };
-      td.appendChild(btnFin);
-    } else if(x.status==='Finalizado' && analista){
-      const btnRes=document.createElement('button'); btnRes.className='btn btn-sm btn-primary'; btnRes.textContent='Resolvido';
-      btnRes.onclick=async ()=>{ await patchDocRemote(x.proto,{status:'Resolvido'}); await docs(); renderTables(); };
-      td.appendChild(btnRes);
-    }
-    tbody.appendChild(tr);
-  });
+    if(x.status==='Recebido' && !analista){
+      const btnFin=document.createElement('button'); btnFin.className='btn btn-sm btn-success'; btnFin.textContent='Finalizar';
+      btnFin.onclick=async ()=>{ await patchDocRemote(x.proto,{status:'Finalizado'}); await docs(); renderTables(); };
+      td.appendChild(btnFin);
+    } else if(x.status==='Finalizado' && analista){
+      const btnRes=document.createElement('button'); btnRes.className='btn btn-sm btn-primary'; btnRes.textContent='Resolvido';
+      btnRes.onclick=async ()=>{ await patchDocRemote(x.proto,{status:'Resolvido'}); await docs(); renderTables(); };
+      td.appendChild(btnRes);
+    }
+    tbody.appendChild(tr);
+  });
 }
 
 /* ======= ADMIN — Gerenciar usuários ======= */
 async function renderUsersTable(){
-  const tb=document.getElementById('usersTable'); if(!tb) return; tb.innerHTML='';
-  await users();
-  _usersCache.forEach(u=>{
-    const tr=document.createElement('tr');
-    const roleLabel = u.role==='rep'?'REP':u.role==='instr'?'INSTR':u.role==='log'?'LOG':u.role==='ana'?'ANA':'ADMIN';
-    tr.innerHTML=`<td>${u.nome}</td><td>${u.email}</td><td>${roleLabel}</td><td>${u.ativo!==false?'Ativo':'Inativo'}</td><td></td>`;
-    const td=tr.querySelector('td:last-child');
-    const btnToggle=document.createElement('button'); btnToggle.className='btn btn-sm ' + (u.ativo!==false?'btn-outline-warning':'btn-outline-success');
-    btnToggle.textContent = u.ativo!==false ? 'Inativar' : 'Ativar';
-    btnToggle.onclick=async ()=>{
-      await toggleUserActive(u.email);
-      renderUsersTable();
-    };
-    td.appendChild(btnToggle);
-    tb.appendChild(tr);
-  });
+  const tb=document.getElementById('usersTable'); if(!tb) return; tb.innerHTML='';
+  await users();
+  _usersCache.forEach(u=>{
+    const tr=document.createElement('tr');
+    const roleLabel = u.role==='rep'?'REP':u.role==='instr'?'INSTR':u.role==='log'?'LOG':u.role==='ana'?'ANA':'ADMIN';
+    tr.innerHTML=`<td>${u.nome}</td><td>${u.email}</td><td>${roleLabel}</td><td>${u.ativo!==false?'Ativo':'Inativo'}</td><td></td>`;
+    const td=tr.querySelector('td:last-child');
+    const btnToggle=document.createElement('button'); btnToggle.className='btn btn-sm ' + (u.ativo!==false?'btn-outline-warning':'btn-outline-success');
+    btnToggle.textContent = u.ativo!==false ? 'Inativar' : 'Ativar';
+    btnToggle.onclick=async ()=>{
+      await toggleUserActive(u.email);
+      renderUsersTable();
+    };
+    td.appendChild(btnToggle);
+    tb.appendChild(tr);
+  });
 }
 
 document.getElementById('btnCriarUsuario').addEventListener('click', async ()=>{
-  const nome=document.getElementById('uNome').value.trim();
-  const email=document.getElementById('uEmail').value.trim();
-  const senha=document.getElementById('uSenha').value.trim();
-  const role=document.getElementById('uRole').value;
-  if(!nome||!email||!senha){ alert('Preencha nome, e-mail e senha.'); return; }
-  try{
-    const list = await users();
-    if(list.some(x=>x.email.toLowerCase()===email.toLowerCase())){ alert('Já existe usuário com este e-mail.'); return; }
-    await createUserRemote({ nome, email, senha, role });
-    document.getElementById('uNome').value=''; document.getElementById('uEmail').value=''; document.getElementById('uSenha').value='';
-    renderUsersTable();
-    alert('Usuário criado!');
-  }catch(e){ alert(e.message); }
+  const nome=document.getElementById('uNome').value.trim();
+  const email=document.getElementById('uEmail').value.trim();
+  const senha=document.getElementById('uSenha').value.trim();
+  const role=document.getElementById('uRole').value;
+  if(!nome||!email||!senha){ alert('Preencha nome, e-mail e senha.'); return; }
+  try{
+    const list = await users();
+    if(list.some(x=>x.email.toLowerCase()===email.toLowerCase())){ alert('Já existe usuário com este e-mail.'); return; }
+    await createUserRemote({ nome, email, senha, role });
+    document.getElementById('uNome').value=''; document.getElementById('uEmail').value=''; document.getElementById('uSenha').value='';
+    renderUsersTable();
+    alert('Usuário criado!');
+  }catch(e){ alert(e.message); }
 });
 
 document.getElementById('btnExportar').addEventListener('click', async ()=>{
-  await users();
-  const blob=new Blob([JSON.stringify(_usersCache,null,2)],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=url; a.download='usuarios.json'; a.click(); URL.revokeObjectURL(url);
+  await users();
+  const blob=new Blob([JSON.stringify(_usersCache,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='usuarios.json'; a.click(); URL.revokeObjectURL(url);
 });
 document.getElementById('inpImportar').addEventListener('change', async (e)=>{
-  const file=e.target.files[0]; if(!file) return;
-  const text=await file.text(); let arr=[];
-  try{
-    arr=JSON.parse(text); if(!Array.isArray(arr)) throw new Error('JSON inválido');
-  }catch(err){ alert('Arquivo inválido'); return; }
-  try{
-    for(const u of arr){
-      try{ await createUserRemote(u); }catch(_){} // ignora duplicados
-    }
-    renderUsersTable(); alert('Importado com sucesso!');
-  }catch(err){ alert('Falha ao importar'); }
+  const file=e.target.files[0]; if(!file) return;
+  const text=await file.text(); let arr=[];
+  try{
+    arr=JSON.parse(text); if(!Array.isArray(arr)) throw new Error('JSON inválido');
+  }catch(err){ alert('Arquivo inválido'); return; }
+  try{
+    for(const u of arr){
+      try{ await createUserRemote(u); }catch(_){} // ignora duplicados
+    }
+    renderUsersTable(); alert('Importado com sucesso!');
+  }catch(err){ alert('Falha ao importar'); }
 });
 
 /* ======= RESTORE SESSION ======= */
