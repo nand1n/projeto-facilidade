@@ -259,10 +259,6 @@ function loadJSON(key){ try { return JSON.parse(localStorage.getItem(key) || '[]
 let _usersCache = [];
 let _docsCache  = [];
 
-// === USUÁRIOS (REMOTE) ===
-// === USUÁRIOS (REMOTE) ===
-let _usersCache = []; // cache em memória
-
 async function fetchUsers() {
   try {
     const res = await fetch('/api/users', { headers: { 'accept': 'application/json' } });
